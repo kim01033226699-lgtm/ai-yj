@@ -39,10 +39,9 @@ export const CATEGORIES: Record<NonNullable<Category>, CategoryInfo> & { null: C
 // 문서 경로와 카테고리 매핑
 export const DOCUMENT_CATEGORIES: Record<string, Category> = {
   '/documents/gr-appoint.md': 'campus', // 금융캠퍼스 관련
-  '/documents/sample-guide.md': 'appointment', // 위촉 관련
+  '/documents/goodrich-rp-qa.md': null, // 전체 (영업관리 Q&A)
   '/documents/contact-info.md': null, // 전체 (연락처 정보는 모든 카테고리에 해당)
-  '/documents/faq.md': null, // 전체 (FAQ는 모든 카테고리에 해당)
-  '/documents/ga_domain.md': null, // 전체 (용어집은 모든 카테고리에 해당)
+  '/documents/ga-domain-terms.md': null, // 전체 (용어집은 모든 카테고리에 해당)
 }
 
 // 카테고리별 문서 필터링

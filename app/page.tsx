@@ -9,11 +9,10 @@ const DocumentChatbot = dynamic(() => import('./components/DocumentChatbot').the
 export default function AIYJPage() {
   // 로드할 문서 목록
   const documents = [
-    { path: '/documents/sample-guide.md', name: '스마트위촉 가이드' },
-    { path: '/documents/faq.md', name: 'FAQ' },
-    { path: '/documents/ga_domain.md', name: 'GA 도메인 용어집' },
+    { path: '/documents/goodrich-rp-qa.md', name: 'GoodRich RP채널 Q&A' },
+    { path: '/documents/ga-domain-terms.md', name: 'GA 도메인 용어집' },
     { path: '/documents/gr-appoint.md', name: 'GR Appoint' },
-    { path: '/documents/contact-info.md', name: '연락처 정보' },
+    { path: '/documents/contact-info.md', name: '영업지원 연락처' },
   ]
 
   return (

@@ -59,12 +59,12 @@ export function DocumentChatbot({ documentPaths }: DocumentChatbotProps) {
       filteredPaths.some((path) => path.path === doc.path)
     )
 
-    // 필터링된 문서 + 전체 문서(FAQ, 용어집 등) 병합
+    // 필터링된 문서 + 전체 문서(용어집, Q&A 등) 병합
     const categoryDocs = [...filteredDocs]
     const commonDocs = docs.filter(
       (doc) =>
-        doc.path === '/documents/faq.md' ||
-        doc.path === '/documents/ga_domain.md'
+        doc.path === '/documents/ga-domain-terms.md' ||
+        doc.path === '/documents/goodrich-rp-qa.md'
     )
     const mergedDocs = [...categoryDocs, ...commonDocs]
 
