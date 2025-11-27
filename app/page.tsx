@@ -1,4 +1,10 @@
-import { DocumentChatbot } from './components/DocumentChatbot'
+'use client'
+
+import dynamic from 'next/dynamic'
+
+const DocumentChatbot = dynamic(() => import('./components/DocumentChatbot').then(mod => ({ default: mod.DocumentChatbot })), {
+  ssr: false,
+})
 
 export default function AIYJPage() {
   // 로드할 문서 목록

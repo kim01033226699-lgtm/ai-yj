@@ -80,7 +80,7 @@ export function DocumentChatbot({ documentPaths }: DocumentChatbotProps) {
     setWaitingForContactConfirmation(false)
 
     // 카테고리 선택 안내 메시지
-    const categoryInfo = category ? CATEGORIES[category] : (CATEGORIES as Record<string, CategoryInfo>)[null]
+    const categoryInfo = category ? CATEGORIES[category] : (CATEGORIES as Record<string, CategoryInfo>)['null']
     const welcomeMessage: Message = {
       id: Date.now().toString(),
       role: 'assistant',
@@ -95,7 +95,7 @@ export function DocumentChatbot({ documentPaths }: DocumentChatbotProps) {
     const category = selectedCategory || null
     
     // 문서에서 연락처 정보 추출 시도
-    let contact = category ? CONTACT_INFO[category] : (CONTACT_INFO as Record<string, ContactInfo | null>)[null]
+    let contact = category ? CONTACT_INFO[category] : (CONTACT_INFO as Record<string, ContactInfo | null>)['null']
     
     // contact-info.md 문서가 있으면 해당 문서에서 추출
     const contactDoc = allDocuments.find((doc) => doc.path === '/documents/contact-info.md')

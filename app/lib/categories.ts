@@ -9,7 +9,7 @@ export interface ContactInfo {
 }
 
 // 카테고리 정보 정의
-export const CATEGORIES: Record<Category, CategoryInfo> = {
+export const CATEGORIES: Record<NonNullable<Category>, CategoryInfo> & { null: CategoryInfo } = {
   support: {
     id: 'support',
     label: '지원금',
@@ -75,7 +75,7 @@ function formatPhoneWithExtension(extensions: string | string[]): string {
 }
 
 // 카테고리별 담당자 연락처 (기본값, 문서에서 추출 시 덮어씀)
-export const CONTACT_INFO: Record<Category, ContactInfo | null> = {
+export const CONTACT_INFO: Record<NonNullable<Category>, ContactInfo | null> & { null: ContactInfo | null } = {
   support: {
     category: 'support',
     name: '조준승 차장, 서미해 대리',
@@ -108,11 +108,11 @@ export function extractContactFromDocument(
   category: Category
 ): ContactInfo | null {
   if (!category) {
-    return CONTACT_INFO[null]
+    return (CONTACT_INFO as Record<string, ContactInfo | null>)['null']
   }
 
   // 카테고리별 담당자 정보 추출
-  const categoryLabels: Record<Category, string> = {
+  const categoryLabels: Record<NonNullable<Category>, string> & { null: string } = {
     support: '지원금',
     campus: '금융캠퍼스',
     appointment: '위촉',

@@ -14,7 +14,7 @@ export function CategorySelector({
   onSelectCategory,
   disabled = false,
 }: CategorySelectorProps) {
-  const categories: Category[] = ['support', 'campus', 'appointment']
+  const categories: ('support' | 'campus' | 'appointment')[] = ['support', 'campus', 'appointment']
 
   return (
     <div className="p-4 bg-white border-b border-gray-200">
