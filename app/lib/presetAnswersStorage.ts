@@ -4,15 +4,26 @@ import { PRESET_ANSWERS } from './presetAnswers'
 
 const STORAGE_KEY = 'preset-answers-data'
 
-// 서버에서 프리셋 답변 데이터 로드 (파일 기반)
+// 정적 파일에서 프리셋 답변 데이터 로드 (public/preset-answers.json)
 export async function loadPresetAnswersFromFile(): Promise<Record<NonNullable<Category>, PresetOption[]> | null> {
   if (typeof window === 'undefined') return null
 
   try {
-    const response = await fetch('/api/preset-answers')
+    // basePath를 고려한 경로 생성
+    const basePath = process.env.NODE_ENV === 'production' ? '/ai-yj' : ''
+    const filePath = `${basePath}/preset-answers.json`
+    
+    const response = await fetch(filePath, {
+      cache: 'no-store', // 항상 최신 파일을 가져오기
+    })
+    
     if (response.ok) {
       const data = await response.json()
       return data
+    } else if (response.status === 404) {
+      // 파일이 없으면 null 반환 (기본값 사용)
+      console.log('프리셋 답변 파일이 없습니다. 기본값을 사용합니다.')
+      return null
     }
   } catch (error) {
     console.error('프리셋 답변 파일 로드 오류:', error)
@@ -21,46 +32,26 @@ export async function loadPresetAnswersFromFile(): Promise<Record<NonNullable<Ca
   return null
 }
 
-// 서버에 프리셋 답변 데이터 저장 (파일 기반)
-export async function savePresetAnswersToFile(
+// 프리셋 답변 데이터를 JSON 파일로 다운로드
+export function downloadPresetAnswersAsFile(
   data: Record<NonNullable<Category>, PresetOption[]>
-): Promise<boolean> {
-  if (typeof window === 'undefined') return false
+): void {
+  if (typeof window === 'undefined') return
 
   try {
-    // 모든 카테고리가 포함되어 있는지 확인
-    const hasAllCategories = data.support && data.campus && data.appointment
-    if (!hasAllCategories) {
-      console.warn('파일 저장 시도: 일부 카테고리가 누락되었습니다:', {
-        support: !!data.support,
-        campus: !!data.campus,
-        appointment: !!data.appointment,
-      })
-    }
-    
-    const response = await fetch('/api/preset-answers', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(data),
-    })
-    
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}))
-      console.error('프리셋 답변 파일 저장 실패:', response.status, errorData)
-      return false
-    }
-    
-    console.log('프리셋 답변 파일 저장 성공:', {
-      support: data.support?.length || 0,
-      campus: data.campus?.length || 0,
-      appointment: data.appointment?.length || 0,
-    })
-    return true
+    const jsonString = JSON.stringify(data, null, 2)
+    const blob = new Blob([jsonString], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = 'preset-answers.json'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+    console.log('프리셋 답변 파일 다운로드 완료')
   } catch (error) {
-    console.error('프리셋 답변 파일 저장 오류:', error)
-    return false
+    console.error('프리셋 답변 파일 다운로드 오류:', error)
   }
 }
 
@@ -102,17 +93,6 @@ export function savePresetAnswers(
       support: data.support?.length || 0,
       campus: data.campus?.length || 0,
       appointment: data.appointment?.length || 0,
-    })
-    
-    // 파일에도 저장 시도
-    savePresetAnswersToFile(data).then((success) => {
-      if (success) {
-        console.log('프리셋 답변 파일 저장 완료')
-      } else {
-        console.warn('프리셋 답변 파일 저장 실패')
-      }
-    }).catch((error) => {
-      console.error('프리셋 답변 파일 저장 오류:', error)
     })
   } catch (error) {
     console.error('프리셋 답변 저장 오류:', error)

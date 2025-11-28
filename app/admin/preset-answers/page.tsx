@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, Plus, Trash2, Edit2, Save, X } from 'lucide-react'
-import { getPresetAnswers, getPresetAnswersSync, savePresetAnswers, resetPresetAnswers } from '../../lib/presetAnswersStorage'
+import { getPresetAnswers, getPresetAnswersSync, savePresetAnswers, resetPresetAnswers, downloadPresetAnswersAsFile } from '../../lib/presetAnswersStorage'
 import { CATEGORIES } from '../../lib/categories'
 import type { Category } from '../../lib/types'
 import type { PresetOption } from '../../lib/presetAnswers'
@@ -16,12 +16,38 @@ export default function PresetAnswersAdminPage() {
   )
   const [isLoading, setIsLoading] = useState(true)
 
-  // 초기 데이터 로드 (파일에서)
+  // 초기 데이터 로드 (로컬스토리지 우선, 없으면 파일에서)
   useEffect(() => {
     async function loadData() {
       try {
+        // 1. 먼저 로컬스토리지에서 확인 (사용자가 입력한 데이터 우선)
+        const localData = getPresetAnswersSync()
+        
+        // 로컬스토리지에 데이터가 있는지 확인 (기본값이 아닌 실제 데이터인지 확인)
+        const isRealData = localData && (
+          JSON.stringify(localData) !== JSON.stringify(getPresetAnswersSync()) ||
+          (localData.support?.length > 0 || localData.campus?.length > 0 || localData.appointment?.length > 0)
+        )
+        
+        if (isRealData) {
+          console.log('로컬스토리지에서 데이터 로드:', {
+            support: localData.support?.length || 0,
+            campus: localData.campus?.length || 0,
+            appointment: localData.appointment?.length || 0,
+          })
+          setData(localData)
+          setIsLoading(false)
+          return
+        }
+        
+        // 2. 로컬스토리지에 없으면 파일에서 로드
         const fileData = await getPresetAnswers()
         if (fileData) {
+          console.log('파일에서 데이터 로드:', {
+            support: fileData.support?.length || 0,
+            campus: fileData.campus?.length || 0,
+            appointment: fileData.appointment?.length || 0,
+          })
           setData(fileData)
         }
       } catch (error) {
@@ -476,17 +502,69 @@ export default function PresetAnswersAdminPage() {
               </p>
             </div>
           </div>
-          <button
-            onClick={() => {
-              if (confirm('모든 설정을 기본값으로 초기화하시겠습니까?')) {
-                resetPresetAnswers()
-                setData(getPresetAnswersSync())
-              }
-            }}
-            className="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg text-sm font-medium"
-          >
-            기본값으로 초기화
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={() => {
+                if (confirm('모든 설정을 기본값으로 초기화하시겠습니까?')) {
+                  resetPresetAnswers()
+                  setData(getPresetAnswersSync())
+                }
+              }}
+              className="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg text-sm font-medium"
+            >
+              기본값으로 초기화
+            </button>
+            <button
+              onClick={async () => {
+                // 1. 로컬스토리지에서 직접 확인
+                try {
+                  const stored = localStorage.getItem('preset-answers-data')
+                  if (stored) {
+                    const parsed = JSON.parse(stored)
+                    console.log('로컬스토리지 원본 데이터:', parsed)
+                    
+                    // 기본값과 다른지 확인
+                    const { getPresetAnswersSync } = await import('../../lib/presetAnswersStorage')
+                    const defaultData = getPresetAnswersSync()
+                    const isDifferent = JSON.stringify(parsed) !== JSON.stringify(defaultData)
+                    
+                    if (isDifferent) {
+                      setData(parsed)
+                      alert('로컬스토리지에서 데이터를 복구했습니다!')
+                      return
+                    }
+                  }
+                } catch (e) {
+                  console.error('로컬스토리지 복구 오류:', e)
+                }
+                
+                // 2. 파일에서 복구 시도
+                try {
+                  const fileData = await getPresetAnswers()
+                  if (fileData) {
+                    setData(fileData)
+                    alert('파일에서 데이터를 복구했습니다!')
+                  } else {
+                    alert('복구할 데이터가 없습니다.\n\n브라우저 콘솔(F12)을 열고 다음 명령어를 실행해보세요:\nlocalStorage.getItem("preset-answers-data")')
+                  }
+                } catch (e) {
+                  alert('복구 중 오류가 발생했습니다.\n\n브라우저 콘솔(F12)을 열고 다음 명령어를 실행해보세요:\nlocalStorage.getItem("preset-answers-data")')
+                }
+              }}
+              className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium"
+            >
+              데이터 복구
+            </button>
+            <button
+              onClick={() => {
+                downloadPresetAnswersAsFile(data)
+                alert('프리셋 답변 파일이 다운로드되었습니다.\n이 파일을 public/preset-answers.json에 저장하면 배포 시 반영됩니다.')
+              }}
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium"
+            >
+              파일로 내보내기
+            </button>
+          </div>
         </div>
 
         {/* 카테고리 선택 */}
