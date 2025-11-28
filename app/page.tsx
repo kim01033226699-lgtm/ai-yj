@@ -93,16 +93,6 @@ export default function AIYJPage() {
           </p>
         </div>
 
-        {/* 관리자 링크 */}
-        <div className="mt-6 text-center">
-          <a
-            href="/admin/preset-answers"
-            className="inline-flex items-center gap-2 px-4 py-2 bg-gray-800 hover:bg-gray-900 text-white rounded-lg text-sm font-medium transition-colors"
-          >
-            <span>⚙️</span>
-            프리셋 답변 관리
-          </a>
-        </div>
       </div>
 
       {/* 챗봇 컴포넌트 */}

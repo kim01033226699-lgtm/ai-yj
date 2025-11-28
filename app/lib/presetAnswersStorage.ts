@@ -117,15 +117,45 @@ export function resetPresetAnswers(): void {
   savePresetAnswers(defaultData)
 }
 
-// 현재 저장된 데이터 또는 기본값 반환 (로컬스토리지 우선, 없으면 파일, 없으면 기본값)
+// 현재 저장된 데이터 또는 기본값 반환 (구글시트 우선, 없으면 로컬스토리지, 없으면 파일, 없으면 기본값)
+// 항상 구글 시트에서 최신 데이터를 가져오려고 시도
 export async function getPresetAnswers(): Promise<Record<string, PresetOption[]>> {
-  // 1. 먼저 로컬스토리지에서 확인 (관리자가 수정한 데이터 우선)
+  // 1. 구글 시트에서 로드 시도 (환경 변수에 시트 ID가 있는 경우, 우선순위 최상)
+  const googleSheetId = process.env.NEXT_PUBLIC_GOOGLE_SHEET_ID
+  const googleSheetGid = process.env.NEXT_PUBLIC_GOOGLE_SHEET_GID || '0'
+  if (googleSheetId) {
+    try {
+      const { loadPresetAnswersFromGoogleSheets } = await import('./googleSheetsLoader')
+      const sheetData = await loadPresetAnswersFromGoogleSheets(googleSheetId, googleSheetGid)
+      if (sheetData && Object.keys(sheetData).length > 0) {
+        console.log('구글 시트에서 프리셋 답변 로드 성공:', Object.keys(sheetData))
+        // 구글 시트 데이터를 로컬스토리지에도 동기화 (항상 최신 데이터로 업데이트)
+        try {
+          localStorage.setItem('preset-answers-data', JSON.stringify(sheetData))
+          // 저장 완료 이벤트 발생
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('presetAnswersUpdated'))
+          }
+        } catch (e) {
+          // 로컬스토리지 저장 실패는 무시
+          console.error('로컬스토리지 저장 실패:', e)
+        }
+        return sheetData
+      } else {
+        console.log('구글 시트에서 프리셋 답변 데이터를 찾을 수 없습니다.')
+      }
+    } catch (error) {
+      console.error('구글 시트 프리셋 답변 로드 실패:', error)
+    }
+  }
+  
+  // 2. 로컬스토리지에서 확인 (구글 시트가 없거나 실패한 경우)
   const stored = loadPresetAnswers()
   if (stored) {
     return stored
   }
   
-  // 2. 로컬스토리지에 없으면 파일에서 로드 시도
+  // 3. 로컬스토리지에 없으면 파일에서 로드 시도
   const fileData = await loadPresetAnswersFromFile()
   if (fileData) {
     // 파일 데이터를 로컬스토리지에도 동기화 (로컬스토리지가 비어있을 때만)
@@ -133,11 +163,12 @@ export async function getPresetAnswers(): Promise<Record<string, PresetOption[]>
       localStorage.setItem('preset-answers-data', JSON.stringify(fileData))
     } catch (e) {
       // 로컬스토리지 저장 실패는 무시
+      console.error('로컬스토리지 저장 실패:', e)
     }
     return fileData
   }
   
-  // 3. 기본값 반환
+  // 4. 기본값 반환
   return {
     support: PRESET_ANSWERS.support,
     campus: PRESET_ANSWERS.campus,
@@ -159,13 +190,42 @@ export function getPresetAnswersSync(): Record<string, PresetOption[]> {
   }
 }
 
-// 파일에서 데이터를 로컬스토리지로 동기화 (초기 로드 시 호출)
-// 단, localStorage에 이미 데이터가 있으면 덮어쓰지 않음 (관리자가 수정한 데이터 보호)
+// 파일/구글시트에서 데이터를 로컬스토리지로 동기화 (초기 로드 시 호출)
+// 구글 시트가 있으면 우선적으로 사용, 없으면 파일에서 로드
 export async function syncPresetAnswersFromFile(): Promise<void> {
   if (typeof window === 'undefined') return
   
   try {
-    // 먼저 localStorage에 데이터가 있는지 확인
+    // 1. 구글 시트에서 로드 시도 (환경 변수에 시트 ID가 있는 경우, 우선순위 최상)
+    const googleSheetId = process.env.NEXT_PUBLIC_GOOGLE_SHEET_ID
+    const googleSheetGid = process.env.NEXT_PUBLIC_GOOGLE_SHEET_GID || '0'
+    if (googleSheetId) {
+      try {
+        const { loadPresetAnswersFromGoogleSheets } = await import('./googleSheetsLoader')
+        const sheetData = await loadPresetAnswersFromGoogleSheets(googleSheetId, googleSheetGid)
+        if (sheetData && Object.keys(sheetData).length > 0) {
+          console.log('구글 시트에서 프리셋 답변 로드 성공:', Object.keys(sheetData))
+          // 구글 시트 데이터를 로컬스토리지에 저장 (항상 최신 데이터로 업데이트)
+          try {
+            localStorage.setItem('preset-answers-data', JSON.stringify(sheetData))
+            console.log('구글 시트 데이터를 로컬스토리지에 동기화 완료')
+            // 저장 완료 이벤트 발생
+            if (typeof window !== 'undefined') {
+              window.dispatchEvent(new CustomEvent('presetAnswersUpdated'))
+            }
+          } catch (e) {
+            console.error('로컬스토리지 저장 실패:', e)
+          }
+          return
+        } else {
+          console.log('구글 시트에서 프리셋 답변 데이터를 찾을 수 없습니다.')
+        }
+      } catch (error) {
+        console.error('구글 시트 프리셋 답변 로드 실패:', error)
+      }
+    }
+    
+    // 2. 구글 시트가 없거나 실패한 경우, localStorage에 데이터가 있는지 확인
     const existingData = loadPresetAnswers()
     if (existingData) {
       // localStorage에 데이터가 있으면 파일로 덮어쓰지 않음 (관리자가 수정한 데이터 보호)
@@ -173,7 +233,7 @@ export async function syncPresetAnswersFromFile(): Promise<void> {
       return
     }
     
-    // localStorage에 데이터가 없을 때만 파일에서 로드
+    // 3. localStorage에 데이터가 없을 때만 파일에서 로드
     const fileData = await loadPresetAnswersFromFile()
     if (fileData) {
       // 모든 카테고리 데이터가 있는지 확인

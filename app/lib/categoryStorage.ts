@@ -32,7 +32,35 @@ const DEFAULT_CATEGORIES: CategoryData[] = [
   },
 ]
 
-// 카테고리 목록 로드
+// 파일에서 카테고리 데이터 로드 (public/categories.json)
+export async function loadCategoriesFromFile(): Promise<CategoryData[] | null> {
+  if (typeof window === 'undefined') return null
+
+  try {
+    const basePath = process.env.NODE_ENV === 'production' ? '/ai-yj' : ''
+    const filePath = `${basePath}/categories.json`
+    
+    const response = await fetch(filePath, {
+      cache: 'no-store', // 항상 최신 파일을 가져오기
+    })
+    
+    if (response.ok) {
+      const data = await response.json()
+      if (Array.isArray(data) && data.length > 0) {
+        return data
+      }
+    } else if (response.status === 404) {
+      console.log('카테고리 파일이 없습니다. 기본값을 사용합니다.')
+      return null
+    }
+  } catch (error) {
+    console.error('카테고리 파일 로드 오류:', error)
+  }
+
+  return null
+}
+
+// 카테고리 목록 로드 (로컬스토리지 우선, 없으면 파일, 없으면 기본값)
 export function loadCategories(): CategoryData[] {
   if (typeof window === 'undefined') return DEFAULT_CATEGORIES
 
@@ -53,6 +81,57 @@ export function loadCategories(): CategoryData[] {
   return DEFAULT_CATEGORIES
 }
 
+// 비동기 버전: 구글시트, 파일에서도 로드 시도
+export async function loadCategoriesAsync(): Promise<CategoryData[]> {
+  if (typeof window === 'undefined') return DEFAULT_CATEGORIES
+
+  // 1. 구글 시트에서 로드 시도 (환경 변수에 시트 ID가 있는 경우, 우선순위 최상)
+  // 카테고리 시트 ID가 없으면 프리셋 시트 ID 사용 (같은 시트에서 카테고리도 가져옴)
+  const googleSheetId = process.env.NEXT_PUBLIC_GOOGLE_CATEGORIES_SHEET_ID || process.env.NEXT_PUBLIC_GOOGLE_SHEET_ID
+  const googleSheetGid = process.env.NEXT_PUBLIC_GOOGLE_SHEET_GID || '0'
+  if (googleSheetId) {
+    try {
+      const { loadCategoriesFromGoogleSheets } = await import('./googleSheetsLoader')
+      const sheetData = await loadCategoriesFromGoogleSheets(googleSheetId, googleSheetGid)
+      if (sheetData && sheetData.length > 0) {
+        console.log('구글 시트에서 카테고리 로드 성공:', sheetData.length, '개')
+        // 구글 시트 데이터를 로컬스토리지에도 동기화
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(sheetData))
+        } catch (e) {
+          // 로컬스토리지 저장 실패는 무시
+        }
+        return sheetData
+      } else {
+        console.log('구글 시트에서 카테고리를 찾을 수 없습니다.')
+      }
+    } catch (error) {
+      console.error('구글 시트 카테고리 로드 실패:', error)
+    }
+  }
+
+  // 2. 로컬스토리지에서 확인 (구글 시트가 없을 때만)
+  const stored = loadCategories()
+  if (stored && stored.length > 0 && stored !== DEFAULT_CATEGORIES) {
+    return stored
+  }
+
+  // 3. 로컬스토리지에 없으면 파일에서 로드 시도
+  const fileData = await loadCategoriesFromFile()
+  if (fileData) {
+    // 파일 데이터를 로컬스토리지에도 동기화 (로컬스토리지가 비어있을 때만)
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(fileData))
+    } catch (e) {
+      // 로컬스토리지 저장 실패는 무시
+    }
+    return fileData
+  }
+
+  // 4. 기본값 반환
+  return DEFAULT_CATEGORIES
+}
+
 // 카테고리 목록 저장
 export function saveCategories(categories: CategoryData[]): void {
   if (typeof window === 'undefined') return
@@ -62,6 +141,27 @@ export function saveCategories(categories: CategoryData[]): void {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(categories))
   } catch (error) {
     console.error('카테고리 저장 오류:', error)
+  }
+}
+
+// 카테고리 데이터를 JSON 파일로 다운로드
+export function downloadCategoriesAsFile(categories: CategoryData[]): void {
+  if (typeof window === 'undefined') return
+
+  try {
+    const jsonString = JSON.stringify(categories, null, 2)
+    const blob = new Blob([jsonString], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = 'categories.json'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+    console.log('카테고리 파일 다운로드 완료')
+  } catch (error) {
+    console.error('카테고리 파일 다운로드 오류:', error)
   }
 }
 

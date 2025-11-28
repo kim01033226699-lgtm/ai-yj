@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { CATEGORIES } from '../lib/categories'
 import { getCategoryLabel } from '../lib/categoryLabels'
-import { loadCategories, type CategoryData } from '../lib/categoryStorage'
+import { loadCategories, loadCategoriesAsync, type CategoryData } from '../lib/categoryStorage'
 import type { Category } from '../lib/types'
 
 interface CategorySelectorProps {
@@ -20,8 +20,12 @@ export function CategorySelector({
   const [categories, setCategories] = useState<CategoryData[]>([])
 
   useEffect(() => {
-    const loadedCategories = loadCategories()
-    setCategories(loadedCategories)
+    // 초기 로드: 파일에서도 로드 시도
+    const loadInitialCategories = async () => {
+      const loadedCategories = await loadCategoriesAsync()
+      setCategories(loadedCategories)
+    }
+    loadInitialCategories()
     
     // 카테고리 업데이트 이벤트 리스너
     const handleUpdate = () => {

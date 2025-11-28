@@ -36,7 +36,14 @@ export function PresetAnswerSelector({
     }
   }, [])
 
+  // 카테고리 유효성 검사
   if (!category) {
+    return null
+  }
+
+  // 카테고리가 유효한 ID인지 확인 (긴 텍스트가 전달되는 버그 방지)
+  if (typeof category === 'string' && category.length > 50) {
+    console.error('[PresetAnswerSelector] 잘못된 category 값:', category)
     return null
   }
 
@@ -57,9 +64,15 @@ export function PresetAnswerSelector({
   const getSelectionPathLabels = (): string[] => {
     if (selectionPath.length === 0) return []
     
+    // category가 유효한 카테고리 ID인지 확인 (옵션 제목이 아닌지)
+    if (!category || typeof category !== 'string' || category.length > 50) {
+      console.warn('[getSelectionPathLabels] 잘못된 category 값:', category)
+      return []
+    }
+    
     try {
       const options = getFirstLevelOptions(category)
-      if (!options) return []
+      if (!options || !Array.isArray(options)) return []
 
       const labels: string[] = []
       let current: PresetOption[] | PresetOption | undefined = options
@@ -87,7 +100,8 @@ export function PresetAnswerSelector({
       }
 
       return labels
-    } catch {
+    } catch (error) {
+      console.error('[getSelectionPathLabels] 오류:', error)
       return []
     }
   }

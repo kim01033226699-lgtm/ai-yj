@@ -1,0 +1,21 @@
+[
+  {
+    "id": "support",
+    "label": "지원금",
+    "emoji": "💰",
+    "description": "지원금 관련 문의"
+  },
+  {
+    "id": "campus",
+    "label": "금융캠퍼스",
+    "emoji": "🏫",
+    "description": "금융캠퍼스 관련 문의"
+  },
+  {
+    "id": "appointment",
+    "label": "위촉",
+    "emoji": "📋",
+    "description": "위촉 관련 문의"
+  }
+]
+
