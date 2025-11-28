@@ -17,6 +17,8 @@ export default function PresetAnswersAdminPage() {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editingCategory, setEditingCategory] = useState<NonNullable<Category> | null>(null)
   const [expandedPaths, setExpandedPaths] = useState<Set<string>>(new Set())
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null)
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null)
   const [categoryLabels, setCategoryLabels] = useState<Record<NonNullable<Category>, string>>({
     support: CATEGORIES.support.label,
     campus: CATEGORIES.campus.label,
@@ -204,6 +206,52 @@ export default function PresetAnswersAdminPage() {
     return findOptionByPath(option.children, rest)
   }
 
+  // 최상위 옵션 순서 변경
+  const reorderTopLevelOptions = (fromIndex: number, toIndex: number) => {
+    if (fromIndex === toIndex) return
+
+    setData((prev) => {
+      const newData = { ...prev }
+      const options = [...(newData[selectedCategory] || [])]
+      const [moved] = options.splice(fromIndex, 1)
+      options.splice(toIndex, 0, moved)
+      newData[selectedCategory] = options
+      return newData
+    })
+  }
+
+  // 드래그 시작
+  const handleDragStart = (index: number) => {
+    setDraggedIndex(index)
+  }
+
+  // 드래그 오버
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault()
+    setDragOverIndex(index)
+  }
+
+  // 드래그 리브
+  const handleDragLeave = () => {
+    setDragOverIndex(null)
+  }
+
+  // 드롭
+  const handleDrop = (e: React.DragEvent, toIndex: number) => {
+    e.preventDefault()
+    if (draggedIndex !== null && draggedIndex !== toIndex) {
+      reorderTopLevelOptions(draggedIndex, toIndex)
+    }
+    setDraggedIndex(null)
+    setDragOverIndex(null)
+  }
+
+  // 드래그 종료
+  const handleDragEnd = () => {
+    setDraggedIndex(null)
+    setDragOverIndex(null)
+  }
+
   // 트리 렌더링
   const renderOption = (option: PresetOption, path: string[], level: number = 0) => {
     const pathKey = path.join('/')
@@ -211,6 +259,7 @@ export default function PresetAnswersAdminPage() {
     const isEditing = editingId === option.id
     const hasChildren = option.children && option.children.length > 0
     const hasAnswer = !!option.answer
+    const isTopLevel = level === 0
 
     return (
       <div key={option.id} className="mb-2">
@@ -221,9 +270,22 @@ export default function PresetAnswersAdminPage() {
               : level === 1
               ? 'bg-green-50 border border-green-200'
               : 'bg-gray-50 border border-gray-200'
-          }`}
+          } ${isTopLevel ? 'cursor-move' : ''}`}
           style={{ marginLeft: `${level * 20}px` }}
         >
+          {/* 드래그 핸들 (최상위 옵션만) */}
+          {isTopLevel && (
+            <div className="cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-600 flex-shrink-0">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                <circle cx="4" cy="4" r="1.5" />
+                <circle cx="12" cy="4" r="1.5" />
+                <circle cx="4" cy="8" r="1.5" />
+                <circle cx="12" cy="8" r="1.5" />
+                <circle cx="4" cy="12" r="1.5" />
+                <circle cx="12" cy="12" r="1.5" />
+              </svg>
+            </div>
+          )}
           {/* 확장/축소 버튼 */}
           {hasChildren && (
             <button
@@ -493,9 +555,26 @@ export default function PresetAnswersAdminPage() {
                 <p>옵션이 없습니다. "최상위 옵션 추가" 버튼을 클릭하여 추가하세요.</p>
               </div>
             ) : (
-              data[selectedCategory]?.map((option) =>
-                renderOption(option, [option.id], 0)
-              )
+              data[selectedCategory]?.map((option, index) => (
+                <div
+                  key={option.id}
+                  draggable
+                  onDragStart={() => handleDragStart(index)}
+                  onDragOver={(e) => handleDragOver(e, index)}
+                  onDragLeave={handleDragLeave}
+                  onDrop={(e) => handleDrop(e, index)}
+                  onDragEnd={handleDragEnd}
+                  className={`transition-all ${
+                    draggedIndex === index ? 'opacity-50' : ''
+                  } ${
+                    dragOverIndex === index && draggedIndex !== index
+                      ? 'transform translate-y-1 border-t-2 border-t-blue-400'
+                      : ''
+                  }`}
+                >
+                  {renderOption(option, [option.id], 0)}
+                </div>
+              ))
             )}
           </div>
         </div>

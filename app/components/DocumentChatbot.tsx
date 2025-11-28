@@ -104,9 +104,9 @@ export function DocumentChatbot({ documentPaths }: DocumentChatbotProps) {
     }
     setMessages((prev) => [...prev, answerMessage])
     
-    // 제목만 있는 옵션을 클릭한 경우: 선택 경로를 변경하지 않아서 옵션 목록이 계속 표시됨
-    // 답변이 있는 경우: 선택 경로를 유지하여 답변 창이 계속 표시됨
-    // 선택 경로는 변경하지 않으므로 현재 상태 유지
+    // 제목만 있는 옵션을 클릭한 경우: 선택 경로를 초기화하여 옵션 목록을 숨김
+    // 이렇게 하면 채팅창이 보이도록 함
+    setPresetSelectionPath([])
   }, [])
 
   // 담당자 연락처 안내

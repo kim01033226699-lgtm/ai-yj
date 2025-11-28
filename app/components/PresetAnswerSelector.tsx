@@ -150,11 +150,9 @@ export function PresetAnswerSelector({
       
       if (!hasChildren && !hasAnswer) {
         // 제목만 있는 경우 바로 채팅에 답변으로 추가
+        // handlePresetAnswer에서 선택 경로를 초기화하여 옵션 목록을 숨김
         onAnswer(option.label)
-        // 선택 경로를 한 단계 뒤로 이동하여 이전 옵션 목록으로 돌아감
-        if (selectionPath.length > 0) {
-          onBack()
-        }
+        return
       } else if (hasChildren && option.children) {
         // 하위 옵션이 있는 경우
         // 하위 옵션이 하나만 있고, 그 하위 옵션이 제목만 있는 경우 바로 채팅에 추가
@@ -165,8 +163,8 @@ export function PresetAnswerSelector({
           
           if (!childHasChildren && !childHasAnswer) {
             // 하위 옵션이 하나만 있고 제목만 있는 경우 바로 채팅에 추가
+            // handlePresetAnswer에서 선택 경로를 초기화하여 옵션 목록을 숨김
             onAnswer(child.label)
-            // 선택 경로를 변경하지 않아서 옵션 목록이 계속 표시됨
             return
           }
         }
@@ -201,7 +199,7 @@ export function PresetAnswerSelector({
           </div>
         )}
         <p className="text-sm text-gray-700 mb-3">아래 질문에서 선택해 주세요.</p>
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-2 max-h-[200px] overflow-y-auto pr-2">
           {currentOptions.map((option) => {
             const hasChildren = option.children && option.children.length > 0
             const hasAnswer = !!option.answer
