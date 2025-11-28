@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, Plus, Trash2, Edit2, Save, X } from 'lucide-react'
-import { getPresetAnswers, savePresetAnswers, resetPresetAnswers } from '../../lib/presetAnswersStorage'
+import { getPresetAnswers, getPresetAnswersSync, savePresetAnswers, resetPresetAnswers } from '../../lib/presetAnswersStorage'
 import { CATEGORIES } from '../../lib/categories'
 import type { Category } from '../../lib/types'
 import type { PresetOption } from '../../lib/presetAnswers'
@@ -12,8 +12,26 @@ export default function PresetAnswersAdminPage() {
   const router = useRouter()
   const [selectedCategory, setSelectedCategory] = useState<NonNullable<Category>>('support')
   const [data, setData] = useState<Record<NonNullable<Category>, PresetOption[]>>(
-    getPresetAnswers()
+    getPresetAnswersSync()
   )
+  const [isLoading, setIsLoading] = useState(true)
+
+  // 초기 데이터 로드 (파일에서)
+  useEffect(() => {
+    async function loadData() {
+      try {
+        const fileData = await getPresetAnswers()
+        if (fileData) {
+          setData(fileData)
+        }
+      } catch (error) {
+        console.error('데이터 로드 오류:', error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    loadData()
+  }, [])
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editingCategory, setEditingCategory] = useState<NonNullable<Category> | null>(null)
   const [expandedPaths, setExpandedPaths] = useState<Set<string>>(new Set())
@@ -37,10 +55,12 @@ export default function PresetAnswersAdminPage() {
     }
   }, [])
 
-  // 데이터 변경 시 저장
+  // 데이터 변경 시 저장 (로컬스토리지 + 파일)
   useEffect(() => {
-    savePresetAnswers(data)
-  }, [data])
+    if (!isLoading) {
+      savePresetAnswers(data)
+    }
+  }, [data, isLoading])
 
   // 카테고리 라벨 변경 시 저장
   useEffect(() => {

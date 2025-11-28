@@ -220,10 +220,24 @@ export function findAnswerByPath(
   // 동적으로 저장된 데이터 또는 기본값 사용
   let options: PresetOption[]
   if (typeof window !== 'undefined') {
-    const { getPresetAnswers } = require('./presetAnswersStorage')
-    const answers = getPresetAnswers()
-    options = answers[category]
+    try {
+      const { getPresetAnswersSync } = require('./presetAnswersStorage')
+      const answers = getPresetAnswersSync()
+      if (answers && answers[category] && Array.isArray(answers[category])) {
+        options = answers[category]
+      } else {
+        options = PRESET_ANSWERS[category]
+      }
+    } catch (error) {
+      console.error('프리셋 답변 로드 오류:', error)
+      options = PRESET_ANSWERS[category]
+    }
   } else {
+    options = PRESET_ANSWERS[category]
+  }
+  
+  // options가 없거나 배열이 아니면 기본값 사용
+  if (!options || !Array.isArray(options)) {
     options = PRESET_ANSWERS[category]
   }
 
@@ -266,10 +280,24 @@ export function getNextOptions(
   // 동적으로 저장된 데이터 또는 기본값 사용
   let options: PresetOption[]
   if (typeof window !== 'undefined') {
-    const { getPresetAnswers } = require('./presetAnswersStorage')
-    const answers = getPresetAnswers()
-    options = answers[category]
+    try {
+      const { getPresetAnswersSync } = require('./presetAnswersStorage')
+      const answers = getPresetAnswersSync()
+      if (answers && answers[category] && Array.isArray(answers[category])) {
+        options = answers[category]
+      } else {
+        options = PRESET_ANSWERS[category]
+      }
+    } catch (error) {
+      console.error('프리셋 답변 로드 오류:', error)
+      options = PRESET_ANSWERS[category]
+    }
   } else {
+    options = PRESET_ANSWERS[category]
+  }
+  
+  // options가 없거나 배열이 아니면 기본값 사용
+  if (!options || !Array.isArray(options)) {
     options = PRESET_ANSWERS[category]
   }
 
@@ -302,9 +330,15 @@ export function getFirstLevelOptions(category: Category): PresetOption[] | null 
   
   // 동적으로 저장된 데이터 또는 기본값 사용
   if (typeof window !== 'undefined') {
-    const { getPresetAnswers } = require('./presetAnswersStorage')
-    const answers = getPresetAnswers()
-    return answers[category] || null
+    try {
+      const { getPresetAnswersSync } = require('./presetAnswersStorage')
+      const answers = getPresetAnswersSync()
+      if (answers && answers[category]) {
+        return answers[category]
+      }
+    } catch (error) {
+      console.error('프리셋 답변 로드 오류:', error)
+    }
   }
   
   return PRESET_ANSWERS[category] || null

@@ -19,6 +19,7 @@ interface ChatWindowProps {
   onPresetOptionSelect: (optionId: string) => void
   onPresetBack: () => void
   onPresetAnswer: (answer: string) => void
+  isOpen: boolean
 }
 
 function ChatWindowComponent({
@@ -32,6 +33,7 @@ function ChatWindowComponent({
   onPresetOptionSelect,
   onPresetBack,
   onPresetAnswer,
+  isOpen,
 }: ChatWindowProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -51,7 +53,13 @@ function ChatWindowComponent({
   }
 
   return (
-    <div className="fixed bottom-20 left-1/2 -translate-x-1/2 md:left-auto md:translate-x-0 md:right-6 md:bottom-24 z-40 w-[calc(100%-2rem)] max-w-sm md:w-96 h-[calc(100vh-6rem)] max-h-[600px] md:h-[600px] bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-gray-200">
+    <div 
+      className={`fixed top-1/2 left-1/2 md:top-auto md:left-auto md:right-6 md:bottom-24 z-40 w-[calc(100%-2rem)] max-w-sm md:w-96 h-[calc(100vh-4rem)] max-h-[600px] md:h-[600px] bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-gray-200 transition-all duration-300 ease-in-out ${
+        isOpen 
+          ? '-translate-x-1/2 -translate-y-1/2 md:translate-x-0 md:translate-y-0 opacity-100 pointer-events-auto' 
+          : 'translate-x-[150%] -translate-y-1/2 md:translate-x-[calc(100%+1.5rem)] md:translate-y-0 opacity-0 pointer-events-none'
+      }`}
+    >
       {/* 헤더 */}
       <div className="bg-blue-600 text-white p-4 flex items-center gap-3">
         <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">

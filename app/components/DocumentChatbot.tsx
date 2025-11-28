@@ -26,7 +26,7 @@ export function DocumentChatbot({ documentPaths }: DocumentChatbotProps) {
   const [waitingForContactConfirmation, setWaitingForContactConfirmation] = useState(false)
   const [presetSelectionPath, setPresetSelectionPath] = useState<SelectionPath>([])
 
-  // 문서 로드
+  // 문서 로드 및 프리셋 답변 동기화
   useEffect(() => {
     async function load() {
       try {
@@ -34,6 +34,10 @@ export function DocumentChatbot({ documentPaths }: DocumentChatbotProps) {
         setAllDocuments(docs)
         // 초기에는 전체 문서 로드
         updateDocumentContext(docs, null)
+        
+        // 프리셋 답변 파일에서 로컬스토리지로 동기화
+        const { syncPresetAnswersFromFile } = await import('../lib/presetAnswersStorage')
+        await syncPresetAnswersFromFile()
       } catch (err) {
         console.error('문서 로드 오류:', err)
         setError('문서를 불러오는 중 오류가 발생했습니다.')
@@ -270,20 +274,19 @@ export function DocumentChatbot({ documentPaths }: DocumentChatbotProps) {
   return (
     <>
       <FloatingChatButton isOpen={isOpen} onClick={() => setIsOpen(!isOpen)} />
-      {isOpen && (
-        <ChatWindow
-          messages={messages}
-          isLoading={isLoading}
-          onSendMessage={handleSendMessage}
-          selectedCategory={selectedCategory}
-          onSelectCategory={handleCategorySelect}
-          onButtonClick={handleButtonClick}
-          presetSelectionPath={presetSelectionPath}
-          onPresetOptionSelect={handlePresetOptionSelect}
-          onPresetBack={handlePresetBack}
-          onPresetAnswer={handlePresetAnswer}
-        />
-      )}
+      <ChatWindow
+        messages={messages}
+        isLoading={isLoading}
+        onSendMessage={handleSendMessage}
+        selectedCategory={selectedCategory}
+        onSelectCategory={handleCategorySelect}
+        onButtonClick={handleButtonClick}
+        presetSelectionPath={presetSelectionPath}
+        onPresetOptionSelect={handlePresetOptionSelect}
+        onPresetBack={handlePresetBack}
+        onPresetAnswer={handlePresetAnswer}
+        isOpen={isOpen}
+      />
     </>
   )
 }
