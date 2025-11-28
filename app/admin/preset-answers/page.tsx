@@ -60,11 +60,11 @@ export default function PresetAnswersAdminPage() {
     loadData()
   }, [])
   const [editingId, setEditingId] = useState<string | null>(null)
-  const [editingCategory, setEditingCategory] = useState<NonNullable<Category> | null>(null)
+  const [editingCategory, setEditingCategory] = useState<string | null>(null)
   const [expandedPaths, setExpandedPaths] = useState<Set<string>>(new Set())
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null)
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null)
-  const [categoryLabels, setCategoryLabels] = useState<Record<NonNullable<Category>, string>>({
+  const [categoryLabels, setCategoryLabels] = useState<Record<string, string>>({
     support: CATEGORIES.support.label,
     campus: CATEGORIES.campus.label,
     appointment: CATEGORIES.appointment.label,
@@ -677,7 +677,7 @@ export default function PresetAnswersAdminPage() {
           <div className="flex flex-wrap gap-2">
             {categories.map((cat) => {
               const isEditing = editingCategory === cat.id
-              const rawLabel = categoryLabels[cat.id as NonNullable<Category>] || cat.label
+              const rawLabel = categoryLabels[cat.id] || cat.label
               const displayLabel = removeEmojiFromLabel(rawLabel) || rawLabel
               const isDefault = ['support', 'campus', 'appointment'].includes(cat.id)
               
