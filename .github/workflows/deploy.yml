@@ -36,6 +36,8 @@ jobs:
         env:
           NODE_ENV: production
           NEXT_PUBLIC_GEMINI_API_KEY: ${{ secrets.NEXT_PUBLIC_GEMINI_API_KEY }}
+          NEXT_PUBLIC_GOOGLE_SHEET_ID: ${{ secrets.NEXT_PUBLIC_GOOGLE_SHEET_ID }}
+          NEXT_PUBLIC_GOOGLE_SHEET_GID: ${{ secrets.NEXT_PUBLIC_GOOGLE_SHEET_GID }}
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
