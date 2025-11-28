@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
-import { Send, Loader2 } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { Send, Loader2, ChevronRight } from 'lucide-react'
 import { CategorySelector } from './CategorySelector'
 import { PresetAnswerSelector } from './PresetAnswerSelector'
 import type { Message } from '../lib/types'
@@ -20,6 +20,7 @@ interface ChatWindowProps {
   onPresetBack: () => void
   onPresetAnswer: (answer: string) => void
   isOpen: boolean
+  onClose: () => void
 }
 
 function ChatWindowComponent({
@@ -34,9 +35,10 @@ function ChatWindowComponent({
   onPresetBack,
   onPresetAnswer,
   isOpen,
+  onClose,
 }: ChatWindowProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null)
-  const inputRef = useRef<HTMLInputElement>(null)
+  const [inputValue, setInputValue] = useState('')
 
   // 새 메시지 추가 시 스크롤
   useEffect(() => {
@@ -45,30 +47,33 @@ function ChatWindowComponent({
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    const input = inputRef.current
-    if (!input || !input.value.trim() || isLoading) return
+    if (!inputValue.trim() || isLoading) return
 
-    onSendMessage(input.value.trim())
-    input.value = ''
+    onSendMessage(inputValue.trim())
+    setInputValue('')
   }
 
   return (
-    <div 
-      className={`fixed top-1/2 left-1/2 md:top-auto md:left-auto md:right-6 md:bottom-24 z-40 w-[calc(100%-2rem)] max-w-sm md:w-96 h-[calc(100vh-4rem)] max-h-[600px] md:h-[600px] bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-gray-200 transition-all duration-300 ease-in-out ${
-        isOpen 
-          ? '-translate-x-1/2 -translate-y-1/2 md:translate-x-0 md:translate-y-0 opacity-100 pointer-events-auto' 
-          : 'translate-x-[150%] -translate-y-1/2 md:translate-x-[calc(100%+1.5rem)] md:translate-y-0 opacity-0 pointer-events-none'
+    <div
+      className={`fixed top-[5vh] left-1/2 md:top-auto md:left-auto md:right-6 md:bottom-24 z-40 w-[calc(100%-2rem)] max-w-sm md:w-96 h-[90vh] max-h-[600px] md:h-[600px] bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-gray-200 transition-all duration-300 ease-in-out ${
+        isOpen
+          ? '-translate-x-1/2 md:translate-x-0 md:translate-y-0 opacity-100 pointer-events-auto'
+          : 'translate-x-[150%] md:translate-x-[calc(100%+1.5rem)] md:translate-y-0 opacity-0 pointer-events-none'
       }`}
     >
       {/* 헤더 */}
       <div className="bg-blue-600 text-white p-4 flex items-center gap-3">
-        <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
-          <span className="text-1xl">YJ</span>
+        <div className="flex-1">
+          <h3 className="font-semibold">ai영업지원</h3>
+          <p className="text-xs text-blue-100">AI챗봇이 안내드립니다.</p>
         </div>
-        <div>
-          <h3 className="font-semibold">영지챗봇</h3>
-          <p className="text-xs text-blue-100">AI챗봇답변</p>
-        </div>
+        <button
+          onClick={onClose}
+          className="w-8 h-8 flex items-center justify-center hover:bg-white/20 rounded-full transition-colors"
+          aria-label="채팅 닫기"
+        >
+          <ChevronRight className="w-6 h-6" />
+        </button>
       </div>
 
       {/* 카테고리 선택 */}
@@ -100,10 +105,10 @@ function ChatWindowComponent({
               }`}
             >
               <div
-                className={`max-w-[80%] rounded-2xl px-4 py-2 ${
+                className={`rounded-2xl px-4 py-2 ${
                   msg.role === 'user'
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-white text-gray-800 border border-gray-200'
+                    ? 'max-w-[80%] bg-blue-600 text-white'
+                    : 'max-w-[95%] bg-blue-100 text-gray-800 border border-blue-200'
                 }`}
               >
                 <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
@@ -158,15 +163,16 @@ function ChatWindowComponent({
       <form onSubmit={handleSubmit} className="p-4 bg-white border-t">
         <div className="flex gap-2">
           <input
-            ref={inputRef}
             type="text"
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
             placeholder={selectedCategory ? "질문을 입력하세요..." : "카테고리를 먼저 선택해주세요"}
             className="flex-1 px-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm disabled:bg-gray-100"
             disabled={isLoading || !selectedCategory}
           />
           <button
             type="submit"
-            disabled={isLoading || !selectedCategory}
+            disabled={isLoading || !selectedCategory || !inputValue.trim()}
             className="w-10 h-10 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white rounded-full flex items-center justify-center transition-colors"
           >
             <Send className="w-5 h-5" />

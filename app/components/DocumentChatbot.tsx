@@ -6,6 +6,7 @@ import { ChatWindow } from './ChatWindow'
 import { loadDocuments, mergeDocuments } from '../lib/documentLoader'
 import { askQuestion } from '../lib/gemini'
 import { filterDocumentsByCategory, CONTACT_INFO, CATEGORIES, extractContactFromDocument } from '../lib/categories'
+import { loadCategoriesAsync } from '../lib/categoryStorage'
 import type { Message, Document, Category, CategoryInfo } from '../lib/types'
 import type { ContactInfo } from '../lib/categories'
 import type { SelectionPath } from '../lib/presetAnswers'
@@ -25,28 +26,6 @@ export function DocumentChatbot({ documentPaths }: DocumentChatbotProps) {
   const [selectedCategory, setSelectedCategory] = useState<Category>(null)
   const [waitingForContactConfirmation, setWaitingForContactConfirmation] = useState(false)
   const [presetSelectionPath, setPresetSelectionPath] = useState<SelectionPath>([])
-
-  // 문서 로드 및 프리셋 답변 동기화
-  useEffect(() => {
-    async function load() {
-      try {
-        const docs = await loadDocuments(documentPaths)
-        setAllDocuments(docs)
-        // 초기에는 전체 문서 로드
-        updateDocumentContext(docs, null)
-        
-        // 프리셋 답변 파일에서 로컬스토리지로 동기화
-        const { syncPresetAnswersFromFile } = await import('../lib/presetAnswersStorage')
-        await syncPresetAnswersFromFile()
-      } catch (err) {
-        console.error('문서 로드 오류:', err)
-        setError('문서를 불러오는 중 오류가 발생했습니다.')
-      }
-    }
-
-    load()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [documentPaths])
 
   // 카테고리 변경 시 문서 컨텍스트 업데이트 (useCallback으로 메모이제이션)
   const updateDocumentContext = useCallback((docs: Document[], category: Category) => {
@@ -79,6 +58,41 @@ export function DocumentChatbot({ documentPaths }: DocumentChatbotProps) {
     setDocumentContext(context)
     setDocuments(mergedDocs)
   }, [documentPaths])
+
+  // 문서 로드 및 프리셋 답변 동기화
+  useEffect(() => {
+    async function load() {
+      try {
+        const docs = await loadDocuments(documentPaths)
+        setAllDocuments(docs)
+        // 초기에는 전체 문서 로드
+        updateDocumentContext(docs, null)
+
+        // 프리셋 답변 파일에서 로컬스토리지로 동기화
+        const { syncPresetAnswersFromFile } = await import('../lib/presetAnswersStorage')
+        await syncPresetAnswersFromFile()
+      } catch (err) {
+        console.error('문서 로드 오류:', err)
+        setError('문서를 불러오는 중 오류가 발생했습니다.')
+      }
+    }
+
+    load()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [documentPaths])
+
+  // 채팅창이 열릴 때 첫 번째 카테고리 자동 선택
+  useEffect(() => {
+    if (isOpen && !selectedCategory) {
+      loadCategoriesAsync().then((categories) => {
+        if (categories && categories.length > 0) {
+          const firstCategory = categories[0].id as Category
+          setSelectedCategory(firstCategory)
+          updateDocumentContext(allDocuments, firstCategory)
+        }
+      })
+    }
+  }, [isOpen, selectedCategory, allDocuments, updateDocumentContext])
 
   // 카테고리 선택 핸들러
   const handleCategorySelect = useCallback((category: Category) => {
@@ -286,6 +300,7 @@ export function DocumentChatbot({ documentPaths }: DocumentChatbotProps) {
         onPresetBack={handlePresetBack}
         onPresetAnswer={handlePresetAnswer}
         isOpen={isOpen}
+        onClose={() => setIsOpen(false)}
       />
     </>
   )

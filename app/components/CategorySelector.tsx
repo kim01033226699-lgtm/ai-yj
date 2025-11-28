@@ -40,7 +40,6 @@ export function CategorySelector({
 
   return (
     <div className="p-4 bg-white border-b border-gray-200">
-      <p className="text-xs text-gray-600 mb-3 font-medium">카테고리를 선택해주세요</p>
       <div className="flex gap-2 flex-wrap">
         {categories.map((category) => {
           const rawLabel = getCategoryLabel(category.id) || category.label
@@ -62,7 +61,6 @@ export function CategorySelector({
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               } ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
             >
-              <span>{category.emoji}</span>
               {categoryLabel}
             </button>
           )

@@ -68,13 +68,18 @@ export function loadCategories(): CategoryData[] {
     const stored = localStorage.getItem(STORAGE_KEY)
     if (stored) {
       const parsed = JSON.parse(stored)
-      // 저장된 카테고리가 있으면 사용, 없으면 기본값
+      // 저장된 카테고리가 있고 비어있지 않으면 사용
       if (Array.isArray(parsed) && parsed.length > 0) {
         return parsed
+      }
+      // 빈 배열이면 삭제하고 기본값 사용
+      if (Array.isArray(parsed) && parsed.length === 0) {
+        localStorage.removeItem(STORAGE_KEY)
       }
     }
   } catch (error) {
     console.error('카테고리 로드 오류:', error)
+    localStorage.removeItem(STORAGE_KEY)
   }
 
   // 기본값 반환 (초기 로드 시)

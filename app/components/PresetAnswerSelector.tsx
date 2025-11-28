@@ -114,7 +114,7 @@ export function PresetAnswerSelector({
   // 1. 답변이 있으면 답변 표시
   if (answer) {
     return (
-      <div className="p-4 bg-blue-50/30 border-b border-blue-200">
+      <div className="p-4 border-b border-gray-200 max-h-[300px] overflow-y-auto">
         {/* 뒤로가기 화살표와 선택한 항목 제목 */}
         {pathLabels.length > 0 && (
           <div className="mb-3 flex items-center gap-2">
@@ -136,11 +136,11 @@ export function PresetAnswerSelector({
         )}
         {/* 말풍선 스타일 답변 박스 */}
         <div className="flex justify-start">
-          <div className="relative max-w-[85%]">
+          <div className="relative max-w-[95%]">
             {/* 말풍선 꼬리 */}
-            <div className="absolute -left-2 top-4 w-0 h-0 border-t-[8px] border-t-transparent border-r-[8px] border-r-blue-50/50 border-b-[8px] border-b-transparent"></div>
-            {/* 말풍선 본체 - 하늘색 배경 흐리게 적용 */}
-            <div className="bg-blue-50/50 rounded-2xl px-4 py-3 shadow-md border border-blue-100/50">
+            <div className="absolute -left-2 top-4 w-0 h-0 border-t-[8px] border-t-transparent border-r-[8px] border-r-blue-100 border-b-[8px] border-b-transparent"></div>
+            {/* 말풍선 본체 - 하늘색 배경 진하게 적용 */}
+            <div className="bg-blue-100 rounded-2xl px-4 py-3 shadow-md border border-blue-200">
               <p className="text-sm text-gray-800 whitespace-pre-wrap leading-relaxed">{answer}</p>
             </div>
           </div>
@@ -200,7 +200,7 @@ export function PresetAnswerSelector({
     }
 
     return (
-      <div className="p-4 bg-blue-50 border-b border-blue-200">
+      <div className="p-4 border-b border-gray-200">
         {/* 뒤로가기 화살표와 선택한 항목 제목 */}
         {pathLabels.length > 0 && (
           <div className="mb-3 flex items-center gap-2">
@@ -220,7 +220,6 @@ export function PresetAnswerSelector({
             </div>
           </div>
         )}
-        <p className="text-sm text-gray-700 mb-3">아래 질문에서 선택해 주세요.</p>
         <div className="flex flex-col gap-2 max-h-[200px] overflow-y-auto pr-2">
           {currentOptions.map((option) => {
             const hasChildren = option.children && option.children.length > 0
@@ -250,9 +249,5 @@ export function PresetAnswerSelector({
   }
 
   // 4. 아무것도 없으면 빈 상태 (컴포넌트는 유지)
-  return (
-    <div className="p-4 bg-blue-50 border-b border-blue-200">
-      <p className="text-xs text-gray-600">옵션을 선택해주세요</p>
-    </div>
-  )
+  return null
 }
