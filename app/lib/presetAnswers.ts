@@ -223,22 +223,25 @@ export function findAnswerByPath(
     try {
       const { getPresetAnswersSync } = require('./presetAnswersStorage')
       const answers = getPresetAnswersSync()
-      if (answers && answers[category] && Array.isArray(answers[category])) {
-        options = answers[category]
-      } else {
+      const categoryId = category || ''
+      if (answers && answers[categoryId] && Array.isArray(answers[categoryId])) {
+        options = answers[categoryId]
+      } else if (category && PRESET_ANSWERS[category]) {
         options = PRESET_ANSWERS[category]
+      } else {
+        options = []
       }
     } catch (error) {
       console.error('프리셋 답변 로드 오류:', error)
-      options = PRESET_ANSWERS[category]
+      options = category && PRESET_ANSWERS[category] ? PRESET_ANSWERS[category] : []
     }
   } else {
-    options = PRESET_ANSWERS[category]
+    options = category && PRESET_ANSWERS[category] ? PRESET_ANSWERS[category] : []
   }
   
-  // options가 없거나 배열이 아니면 기본값 사용
+  // options가 없거나 배열이 아니면 빈 배열 사용
   if (!options || !Array.isArray(options)) {
-    options = PRESET_ANSWERS[category]
+    options = []
   }
 
   let current: PresetOption[] | PresetOption | undefined = options
@@ -283,22 +286,25 @@ export function getNextOptions(
     try {
       const { getPresetAnswersSync } = require('./presetAnswersStorage')
       const answers = getPresetAnswersSync()
-      if (answers && answers[category] && Array.isArray(answers[category])) {
-        options = answers[category]
-      } else {
+      const categoryId = category || ''
+      if (answers && answers[categoryId] && Array.isArray(answers[categoryId])) {
+        options = answers[categoryId]
+      } else if (category && PRESET_ANSWERS[category]) {
         options = PRESET_ANSWERS[category]
+      } else {
+        options = []
       }
     } catch (error) {
       console.error('프리셋 답변 로드 오류:', error)
-      options = PRESET_ANSWERS[category]
+      options = category && PRESET_ANSWERS[category] ? PRESET_ANSWERS[category] : []
     }
   } else {
-    options = PRESET_ANSWERS[category]
+    options = category && PRESET_ANSWERS[category] ? PRESET_ANSWERS[category] : []
   }
   
-  // options가 없거나 배열이 아니면 기본값 사용
+  // options가 없거나 배열이 아니면 빈 배열 사용
   if (!options || !Array.isArray(options)) {
-    options = PRESET_ANSWERS[category]
+    options = []
   }
 
   let current: PresetOption[] | PresetOption | undefined = options

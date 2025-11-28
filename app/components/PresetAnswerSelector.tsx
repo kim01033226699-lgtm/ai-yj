@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { ArrowLeft } from 'lucide-react'
 import type { Category } from '../lib/types'
 import { getFirstLevelOptions, getNextOptions, findAnswerByPath, type SelectionPath } from '../lib/presetAnswers'
@@ -22,12 +22,30 @@ export function PresetAnswerSelector({
   onAnswer,
 }: PresetAnswerSelectorProps) {
   const hasAutoAddedRef = useRef<string>('')
+  const [refreshKey, setRefreshKey] = useState(0)
+
+  // 관리자 페이지에서 데이터가 업데이트되면 자동으로 새로고침
+  useEffect(() => {
+    const handleUpdate = () => {
+      setRefreshKey((prev) => prev + 1)
+    }
+
+    window.addEventListener('presetAnswersUpdated', handleUpdate)
+    return () => {
+      window.removeEventListener('presetAnswersUpdated', handleUpdate)
+    }
+  }, [])
 
   if (!category) {
     return null
   }
 
-  // 현재 단계의 옵션들 가져오기
+  // 현재 단계의 옵션들 가져오기 (refreshKey가 변경되면 다시 로드)
+  // refreshKey를 의존성으로 사용하여 관리자 페이지에서 데이터가 업데이트되면 자동으로 새로고침
+  useEffect(() => {
+    // refreshKey가 변경되면 컴포넌트가 리렌더링되어 최신 데이터를 가져옴
+  }, [refreshKey, category, selectionPath])
+
   const currentOptions = selectionPath.length === 0
     ? getFirstLevelOptions(category)
     : getNextOptions(category, selectionPath)
@@ -83,20 +101,19 @@ export function PresetAnswerSelector({
   if (answer) {
     return (
       <div className="p-4 bg-blue-50/30 border-b border-blue-200">
-        {selectionPath.length > 0 && (
-          <button
-            onClick={onBack}
-            className="mb-3 p-1 hover:bg-blue-100 rounded transition-colors"
-            aria-label="뒤로가기"
-          >
-            <ArrowLeft className="w-4 h-4 text-blue-600" />
-          </button>
-        )}
-        {/* 선택한 경로 표시 */}
+        {/* 뒤로가기 화살표와 선택한 항목 제목 */}
         {pathLabels.length > 0 && (
-          <div className="mb-3">
-            <p className="text-xs text-gray-600 mb-1">선택한 항목:</p>
-            <div className="bg-white/50 rounded-lg px-3 py-2 border border-blue-100/50">
+          <div className="mb-3 flex items-center gap-2">
+            {selectionPath.length > 0 && (
+              <button
+                onClick={onBack}
+                className="p-1 hover:bg-blue-100 rounded transition-colors flex-shrink-0"
+                aria-label="뒤로가기"
+              >
+                <ArrowLeft className="w-4 h-4 text-blue-600" />
+              </button>
+            )}
+            <div className="bg-white/50 rounded-lg px-3 py-2 border border-blue-100/50 flex-1">
               <p className="text-sm font-medium text-gray-700">
                 {pathLabels.join(' > ')}
               </p>
@@ -104,7 +121,7 @@ export function PresetAnswerSelector({
           </div>
         )}
         {/* 말풍선 스타일 답변 박스 */}
-        <div className="flex justify-start mb-3">
+        <div className="flex justify-start">
           <div className="relative max-w-[85%]">
             {/* 말풍선 꼬리 */}
             <div className="absolute -left-2 top-4 w-0 h-0 border-t-[8px] border-t-transparent border-r-[8px] border-r-blue-50/50 border-b-[8px] border-b-transparent"></div>
@@ -114,14 +131,6 @@ export function PresetAnswerSelector({
             </div>
           </div>
         </div>
-        {selectionPath.length > 0 && (
-          <button
-            onClick={onBack}
-            className="w-full px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg text-sm font-medium transition-colors"
-          >
-            다시 선택
-          </button>
-        )}
       </div>
     )
   }
@@ -178,20 +187,19 @@ export function PresetAnswerSelector({
 
     return (
       <div className="p-4 bg-blue-50 border-b border-blue-200">
-        {selectionPath.length > 0 && (
-          <button
-            onClick={onBack}
-            className="mb-3 p-1 hover:bg-blue-100 rounded transition-colors"
-            aria-label="뒤로가기"
-          >
-            <ArrowLeft className="w-4 h-4 text-blue-600" />
-          </button>
-        )}
-        {/* 선택한 경로 표시 */}
+        {/* 뒤로가기 화살표와 선택한 항목 제목 */}
         {pathLabels.length > 0 && (
-          <div className="mb-3">
-            <p className="text-xs text-gray-600 mb-1">선택한 항목:</p>
-            <div className="bg-white rounded-lg px-3 py-2 border border-blue-200">
+          <div className="mb-3 flex items-center gap-2">
+            {selectionPath.length > 0 && (
+              <button
+                onClick={onBack}
+                className="p-1 hover:bg-blue-100 rounded transition-colors flex-shrink-0"
+                aria-label="뒤로가기"
+              >
+                <ArrowLeft className="w-4 h-4 text-blue-600" />
+              </button>
+            )}
+            <div className="bg-white rounded-lg px-3 py-2 border border-blue-200 flex-1">
               <p className="text-sm font-medium text-gray-700">
                 {pathLabels.join(' > ')}
               </p>

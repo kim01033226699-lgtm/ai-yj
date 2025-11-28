@@ -91,15 +91,7 @@ function ChatWindowComponent({
 
       {/* 메시지 목록 */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
-        {messages.length === 0 ? (
-          <div className="text-center text-gray-500 mt-20">
-            <p className="text-4xl mb-4">💬</p>
-            <p className="text-sm">카테고리를 선택해주세요</p>
-            <p className="text-xs mt-2 text-gray-400">
-              지원금, 금융캠퍼스, 위촉 중에서 선택하시면 해당 카테고리 문서를 우선 참고하여 답변해드립니다.
-            </p>
-          </div>
-        ) : (
+        {messages.length > 0 && (
           messages.map((msg) => (
             <div
               key={msg.id}

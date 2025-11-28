@@ -5,13 +5,14 @@ import { useRouter } from 'next/navigation'
 import { ArrowLeft, Plus, Trash2, Edit2, Save, X } from 'lucide-react'
 import { getPresetAnswers, getPresetAnswersSync, savePresetAnswers, resetPresetAnswers, downloadPresetAnswersAsFile } from '../../lib/presetAnswersStorage'
 import { CATEGORIES } from '../../lib/categories'
+import { loadCategories, saveCategories, addCategory, deleteCategory, updateCategory, type CategoryData } from '../../lib/categoryStorage'
 import type { Category } from '../../lib/types'
 import type { PresetOption } from '../../lib/presetAnswers'
 
 export default function PresetAnswersAdminPage() {
   const router = useRouter()
-  const [selectedCategory, setSelectedCategory] = useState<NonNullable<Category>>('support')
-  const [data, setData] = useState<Record<NonNullable<Category>, PresetOption[]>>(
+  const [selectedCategory, setSelectedCategory] = useState<string>('support')
+  const [data, setData] = useState<Record<string, PresetOption[]>>(
     getPresetAnswersSync()
   )
   const [isLoading, setIsLoading] = useState(true)
@@ -68,6 +69,10 @@ export default function PresetAnswersAdminPage() {
     campus: CATEGORIES.campus.label,
     appointment: CATEGORIES.appointment.label,
   })
+  const [categories, setCategories] = useState<CategoryData[]>([])
+  const [isAddingCategory, setIsAddingCategory] = useState(false)
+  const [newCategoryLabel, setNewCategoryLabel] = useState('')
+  const [newCategoryEmoji, setNewCategoryEmoji] = useState('📁')
 
   // 카테고리 라벨 로드
   useEffect(() => {
@@ -81,12 +86,76 @@ export default function PresetAnswersAdminPage() {
     }
   }, [])
 
-  // 데이터 변경 시 저장 (로컬스토리지 + 파일)
+  // 카테고리 목록 로드
   useEffect(() => {
-    if (!isLoading) {
-      savePresetAnswers(data)
+    const loadedCategories = loadCategories()
+    setCategories(loadedCategories)
+  }, [])
+
+  // 카테고리명에서 이모지 제거하는 함수
+  const removeEmojiFromLabel = (label: string): string => {
+    // 이모지 정규식: 유니코드 이모지 범위
+    return label.replace(/[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]|[\u{1F600}-\u{1F64F}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]|[\u{1F900}-\u{1F9FF}]|[\u{1FA00}-\u{1FA6F}]|[\u{1FA70}-\u{1FAFF}]|[\u{2190}-\u{21FF}]|[\u{2300}-\u{23FF}]|[\u{2B50}-\u{2B55}]|[\u{3030}-\u{303F}]|[\u{FE00}-\u{FE0F}]|[\u{1F018}-\u{1F270}]/gu, '').trim()
+  }
+
+  // 카테고리 추가
+  const handleAddCategory = () => {
+    if (!newCategoryLabel.trim()) {
+      alert('카테고리 이름을 입력해주세요.')
+      return
     }
-  }, [data, isLoading])
+
+    const cleanedLabel = removeEmojiFromLabel(newCategoryLabel.trim())
+    if (!cleanedLabel) {
+      alert('카테고리 이름을 입력해주세요.')
+      return
+    }
+
+    const newCategory = addCategory({
+      label: cleanedLabel,
+      emoji: newCategoryEmoji || '',
+      description: '',
+    })
+
+    // 프리셋 답변 데이터에 빈 배열 추가
+    setData((prev) => ({
+      ...prev,
+      [newCategory.id]: [],
+    }))
+
+    setCategories(loadCategories())
+    setNewCategoryLabel('')
+    setNewCategoryEmoji('📁')
+    setIsAddingCategory(false)
+    setSelectedCategory(newCategory.id)
+  }
+
+  // 카테고리 삭제
+  const handleDeleteCategory = (categoryId: string) => {
+    if (confirm('이 카테고리를 삭제하시겠습니까? 카테고리에 포함된 모든 프리셋 답변도 삭제됩니다.')) {
+      deleteCategory(categoryId)
+      setCategories(loadCategories())
+      // 프리셋 답변 데이터에서도 제거
+      setData((prev) => {
+        const newData = { ...prev }
+        delete newData[categoryId]
+        return newData
+      })
+      // 현재 선택된 카테고리가 삭제된 경우 첫 번째 카테고리로 변경
+      if (selectedCategory === categoryId) {
+        const remainingCategories = loadCategories()
+        if (remainingCategories.length > 0) {
+          setSelectedCategory(remainingCategories[0].id)
+        }
+      }
+    }
+  }
+
+  // 수동 저장 함수
+  const handleSave = () => {
+    savePresetAnswers(data)
+    alert('저장이 완료되었습니다! 채팅창에 반영되었습니다.')
+  }
 
   // 카테고리 라벨 변경 시 저장
   useEffect(() => {
@@ -191,7 +260,7 @@ export default function PresetAnswersAdminPage() {
     })
   }
 
-  // 옵션 업데이트
+  // 옵션 업데이트 (저장하지 않고 메모리에서만 업데이트)
   const updateOption = (path: string[], updates: Partial<PresetOption>, keepEditing: boolean = false) => {
     setData((prev) => {
       const newData = { ...prev }
@@ -267,7 +336,16 @@ export default function PresetAnswersAdminPage() {
   }
 
   // 드래그 시작
-  const handleDragStart = (index: number) => {
+  const handleDragStart = (index: number, option: PresetOption) => {
+    // 편집 중이거나 하위 메뉴가 펼쳐진 상태면 드래그 금지
+    const pathKey = option.id
+    const isExpanded = expandedPaths.has(pathKey)
+    const isEditing = editingId === option.id || editingId !== null
+    
+    if (isEditing || isExpanded) {
+      return
+    }
+    
     setDraggedIndex(index)
   }
 
@@ -306,6 +384,7 @@ export default function PresetAnswersAdminPage() {
     const hasChildren = option.children && option.children.length > 0
     const hasAnswer = !!option.answer
     const isTopLevel = level === 0
+    const canDrag = isTopLevel && !isEditing && !isExpanded
 
     return (
       <div key={option.id} className="mb-2">
@@ -316,11 +395,11 @@ export default function PresetAnswersAdminPage() {
               : level === 1
               ? 'bg-green-50 border border-green-200'
               : 'bg-gray-50 border border-gray-200'
-          } ${isTopLevel ? 'cursor-move' : ''}`}
+          } ${canDrag ? 'cursor-move' : ''}`}
           style={{ marginLeft: `${level * 20}px` }}
         >
-          {/* 드래그 핸들 (최상위 옵션만) */}
-          {isTopLevel && (
+          {/* 드래그 핸들 (최상위 옵션만, 편집 중이거나 펼쳐진 상태가 아닐 때만) */}
+          {canDrag && (
             <div className="cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-600 flex-shrink-0">
               <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
                 <circle cx="4" cy="4" r="1.5" />
@@ -425,6 +504,15 @@ export default function PresetAnswersAdminPage() {
                 >
                   완료
                 </button>
+                <button
+                  onClick={() => {
+                    setEditingId(null)
+                    // 취소 시 변경사항 되돌리기 (선택사항)
+                  }}
+                  className="px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded text-xs"
+                >
+                  취소
+                </button>
               </div>
             </div>
           ) : (
@@ -504,6 +592,13 @@ export default function PresetAnswersAdminPage() {
           </div>
           <div className="flex gap-2">
             <button
+              onClick={handleSave}
+              className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium flex items-center gap-2"
+            >
+              <Save className="w-4 h-4" />
+              저장
+            </button>
+            <button
               onClick={() => {
                 if (confirm('모든 설정을 기본값으로 초기화하시겠습니까?')) {
                   resetPresetAnswers()
@@ -569,24 +664,38 @@ export default function PresetAnswersAdminPage() {
 
         {/* 카테고리 선택 */}
         <div className="mb-6 bg-white rounded-lg p-4 shadow-sm">
-          <p className="text-sm font-medium text-gray-700 mb-3">카테고리 선택 및 편집</p>
-          <div className="flex gap-2">
-            {(['support', 'campus', 'appointment'] as NonNullable<Category>[]).map((cat) => {
-              const isEditing = editingCategory === cat
-              const displayLabel = categoryLabels[cat] || CATEGORIES[cat].label
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-sm font-medium text-gray-700">카테고리 선택 및 편집</p>
+            <button
+              onClick={() => setIsAddingCategory(true)}
+              className="flex items-center gap-1 px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-lg text-xs font-medium"
+            >
+              <Plus className="w-3 h-3" />
+              카테고리 추가
+            </button>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {categories.map((cat) => {
+              const isEditing = editingCategory === cat.id
+              const rawLabel = categoryLabels[cat.id as NonNullable<Category>] || cat.label
+              const displayLabel = removeEmojiFromLabel(rawLabel) || rawLabel
+              const isDefault = ['support', 'campus', 'appointment'].includes(cat.id)
               
               return (
-                <div key={cat} className="flex items-center gap-2">
+                <div key={cat.id} className="flex items-center gap-2">
                   {isEditing ? (
                     <input
                       type="text"
                       defaultValue={displayLabel}
                       onBlur={(e) => {
-                        if (e.target.value.trim()) {
+                        const cleanedValue = removeEmojiFromLabel(e.target.value.trim())
+                        if (cleanedValue) {
+                          updateCategory(cat.id, { label: cleanedValue })
                           setCategoryLabels((prev) => ({
                             ...prev,
-                            [cat]: e.target.value.trim(),
+                            [cat.id]: cleanedValue,
                           }))
+                          setCategories(loadCategories())
                         }
                         setEditingCategory(null)
                       }}
@@ -605,24 +714,32 @@ export default function PresetAnswersAdminPage() {
                     <>
                       <button
                         onClick={() => {
-                          setSelectedCategory(cat)
+                          setSelectedCategory(cat.id as NonNullable<Category>)
                           setEditingId(null)
                           setExpandedPaths(new Set())
                         }}
-                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                          selectedCategory === cat
+                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
+                          selectedCategory === cat.id
                             ? 'bg-blue-600 text-white shadow-md'
                             : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                         }`}
                       >
+                        <span>{cat.emoji}</span>
                         {displayLabel}
                       </button>
                       <button
-                        onClick={() => setEditingCategory(cat)}
+                        onClick={() => setEditingCategory(cat.id)}
                         className="p-2 hover:bg-gray-100 rounded-lg"
                         title="카테고리 이름 편집"
                       >
                         <Edit2 className="w-4 h-4 text-gray-600" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteCategory(cat.id)}
+                        className="p-2 hover:bg-red-100 rounded-lg"
+                        title="카테고리 삭제"
+                      >
+                        <Trash2 className="w-4 h-4 text-red-600" />
                       </button>
                     </>
                   )}
@@ -630,13 +747,66 @@ export default function PresetAnswersAdminPage() {
               )
             })}
           </div>
+          
+          {/* 카테고리 추가 폼 */}
+          {isAddingCategory && (
+            <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+              <div className="flex items-center gap-2 mb-3">
+                <input
+                  type="text"
+                  placeholder="이모지 (예: 📁)"
+                  value={newCategoryEmoji}
+                  onChange={(e) => setNewCategoryEmoji(e.target.value)}
+                  className="w-20 px-2 py-1 border border-gray-300 rounded text-sm"
+                  maxLength={2}
+                />
+                <input
+                  type="text"
+                  placeholder="카테고리 이름"
+                  value={newCategoryLabel}
+                  onChange={(e) => setNewCategoryLabel(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      handleAddCategory()
+                    }
+                    if (e.key === 'Escape') {
+                      setIsAddingCategory(false)
+                      setNewCategoryLabel('')
+                      setNewCategoryEmoji('📁')
+                    }
+                  }}
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  autoFocus
+                />
+                <button
+                  onClick={handleAddCategory}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium"
+                >
+                  추가
+                </button>
+                <button
+                  onClick={() => {
+                    setIsAddingCategory(false)
+                    setNewCategoryLabel('')
+                    setNewCategoryEmoji('📁')
+                  }}
+                  className="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg text-sm font-medium"
+                >
+                  취소
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* 옵션 트리 */}
         <div className="bg-white rounded-lg p-6 shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-gray-800">
-              {CATEGORIES[selectedCategory].label} 옵션 설정
+              {(() => {
+                const rawLabel = categoryLabels[selectedCategory] || categories.find(c => c.id === selectedCategory)?.label || '옵션 설정'
+                return removeEmojiFromLabel(rawLabel) || rawLabel
+              })()} 옵션 설정
             </h2>
             <button
               onClick={() => addOption()}
@@ -653,26 +823,51 @@ export default function PresetAnswersAdminPage() {
                 <p>옵션이 없습니다. "최상위 옵션 추가" 버튼을 클릭하여 추가하세요.</p>
               </div>
             ) : (
-              data[selectedCategory]?.map((option, index) => (
-                <div
-                  key={option.id}
-                  draggable
-                  onDragStart={() => handleDragStart(index)}
-                  onDragOver={(e) => handleDragOver(e, index)}
-                  onDragLeave={handleDragLeave}
-                  onDrop={(e) => handleDrop(e, index)}
-                  onDragEnd={handleDragEnd}
-                  className={`transition-all ${
-                    draggedIndex === index ? 'opacity-50' : ''
-                  } ${
-                    dragOverIndex === index && draggedIndex !== index
-                      ? 'transform translate-y-1 border-t-2 border-t-blue-400'
-                      : ''
-                  }`}
-                >
-                  {renderOption(option, [option.id], 0)}
-                </div>
-              ))
+              data[selectedCategory]?.map((option, index) => {
+                const pathKey = option.id
+                const isExpanded = expandedPaths.has(pathKey)
+                const isEditing = editingId === option.id || editingId !== null
+                const canDrag = !isEditing && !isExpanded
+                
+                return (
+                  <div
+                    key={option.id}
+                    draggable={canDrag}
+                    onDragStart={(e) => {
+                      if (!canDrag) {
+                        e.preventDefault()
+                        return false
+                      }
+                      handleDragStart(index, option)
+                    }}
+                    onDragOver={(e) => {
+                      if (canDrag) {
+                        handleDragOver(e, index)
+                      } else {
+                        e.preventDefault()
+                      }
+                    }}
+                    onDragLeave={handleDragLeave}
+                    onDrop={(e) => {
+                      if (canDrag) {
+                        handleDrop(e, index)
+                      } else {
+                        e.preventDefault()
+                      }
+                    }}
+                    onDragEnd={handleDragEnd}
+                    className={`transition-all ${
+                      draggedIndex === index ? 'opacity-50' : ''
+                    } ${
+                      dragOverIndex === index && draggedIndex !== index
+                        ? 'transform translate-y-1 border-t-2 border-t-blue-400'
+                        : ''
+                    } ${!canDrag ? 'cursor-default' : ''}`}
+                  >
+                    {renderOption(option, [option.id], 0)}
+                  </div>
+                )
+              })
             )}
           </div>
         </div>
