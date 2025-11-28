@@ -480,7 +480,7 @@ export default function PresetAnswersAdminPage() {
             onClick={() => {
               if (confirm('모든 설정을 기본값으로 초기화하시겠습니까?')) {
                 resetPresetAnswers()
-                setData(getPresetAnswers())
+                setData(getPresetAnswersSync())
               }
             }}
             className="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg text-sm font-medium"
