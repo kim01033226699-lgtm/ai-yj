@@ -3,8 +3,10 @@
 import { useEffect, useRef } from 'react'
 import { Send, Loader2 } from 'lucide-react'
 import { CategorySelector } from './CategorySelector'
+import { PresetAnswerSelector } from './PresetAnswerSelector'
 import type { Message } from '../lib/types'
 import type { Category } from '../lib/types'
+import type { SelectionPath } from '../lib/presetAnswers'
 
 interface ChatWindowProps {
   messages: Message[]
@@ -13,15 +15,23 @@ interface ChatWindowProps {
   selectedCategory: Category
   onSelectCategory: (category: Category) => void
   onButtonClick: (buttonId: string, action: string) => void
+  presetSelectionPath: SelectionPath
+  onPresetOptionSelect: (optionId: string) => void
+  onPresetBack: () => void
+  onPresetAnswer: (answer: string) => void
 }
 
-export function ChatWindow({
+function ChatWindowComponent({
   messages,
   isLoading,
   onSendMessage,
   selectedCategory,
   onSelectCategory,
   onButtonClick,
+  presetSelectionPath,
+  onPresetOptionSelect,
+  onPresetBack,
+  onPresetAnswer,
 }: ChatWindowProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -59,6 +69,17 @@ export function ChatWindow({
         onSelectCategory={onSelectCategory}
         disabled={isLoading}
       />
+
+      {/* 프리셋 답변 선택 (카테고리가 선택된 경우에만 표시) */}
+      {selectedCategory && (
+        <PresetAnswerSelector
+          category={selectedCategory}
+          selectionPath={presetSelectionPath}
+          onSelect={onPresetOptionSelect}
+          onBack={onPresetBack}
+          onAnswer={onPresetAnswer}
+        />
+      )}
 
       {/* 메시지 목록 */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
@@ -155,4 +176,6 @@ export function ChatWindow({
     </div>
   )
 }
+
+export const ChatWindow = ChatWindowComponent
 

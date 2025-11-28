@@ -1,6 +1,7 @@
 'use client'
 
 import { CATEGORIES } from '../lib/categories'
+import { getCategoryLabel } from '../lib/categoryLabels'
 import type { Category } from '../lib/types'
 
 interface CategorySelectorProps {
@@ -22,6 +23,7 @@ export function CategorySelector({
       <div className="flex gap-2">
         {categories.map((category) => {
           const categoryInfo = CATEGORIES[category]
+          const categoryLabel = getCategoryLabel(category)
           const isSelected = selectedCategory === category
 
           return (
@@ -35,7 +37,7 @@ export function CategorySelector({
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               } ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
             >
-              {categoryInfo.label}
+              {categoryLabel}
             </button>
           )
         })}

@@ -57,3 +57,4 @@ npm run dev
 - **UI**: React, Tailwind CSS, Lucide Icons
 - **Framework**: Next.js 16
 
+

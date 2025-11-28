@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { FloatingChatButton } from './FloatingChatButton'
 import { ChatWindow } from './ChatWindow'
 import { loadDocuments, mergeDocuments } from '../lib/documentLoader'
@@ -8,6 +8,7 @@ import { askQuestion } from '../lib/gemini'
 import { filterDocumentsByCategory, CONTACT_INFO, CATEGORIES, extractContactFromDocument } from '../lib/categories'
 import type { Message, Document, Category, CategoryInfo } from '../lib/types'
 import type { ContactInfo } from '../lib/categories'
+import type { SelectionPath } from '../lib/presetAnswers'
 
 interface DocumentChatbotProps {
   documentPaths: { path: string; name: string }[]
@@ -23,6 +24,7 @@ export function DocumentChatbot({ documentPaths }: DocumentChatbotProps) {
   const [error, setError] = useState<string | null>(null)
   const [selectedCategory, setSelectedCategory] = useState<Category>(null)
   const [waitingForContactConfirmation, setWaitingForContactConfirmation] = useState(false)
+  const [presetSelectionPath, setPresetSelectionPath] = useState<SelectionPath>([])
 
   // 문서 로드
   useEffect(() => {
@@ -39,10 +41,11 @@ export function DocumentChatbot({ documentPaths }: DocumentChatbotProps) {
     }
 
     load()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [documentPaths])
 
-  // 카테고리 변경 시 문서 컨텍스트 업데이트
-  const updateDocumentContext = (docs: Document[], category: Category) => {
+  // 카테고리 변경 시 문서 컨텍스트 업데이트 (useCallback으로 메모이제이션)
+  const updateDocumentContext = useCallback((docs: Document[], category: Category) => {
     if (!category) {
       const context = mergeDocuments(docs)
       setDocumentContext(context)
@@ -71,24 +74,40 @@ export function DocumentChatbot({ documentPaths }: DocumentChatbotProps) {
     const context = mergeDocuments(mergedDocs)
     setDocumentContext(context)
     setDocuments(mergedDocs)
-  }
+  }, [documentPaths])
 
   // 카테고리 선택 핸들러
-  const handleCategorySelect = (category: Category) => {
+  const handleCategorySelect = useCallback((category: Category) => {
     setSelectedCategory(category)
     updateDocumentContext(allDocuments, category)
     setWaitingForContactConfirmation(false)
+    setPresetSelectionPath([]) // 카테고리 변경 시 선택 경로 초기화
+  }, [allDocuments, updateDocumentContext])
 
-    // 카테고리 선택 안내 메시지
-    const categoryInfo = category ? CATEGORIES[category] : (CATEGORIES as Record<string, CategoryInfo>)['null']
-    const welcomeMessage: Message = {
+  // 프리셋 답변 옵션 선택 핸들러
+  const handlePresetOptionSelect = useCallback((optionId: string) => {
+    setPresetSelectionPath((prev) => [...prev, optionId])
+  }, [])
+
+  // 프리셋 답변 선택 뒤로가기
+  const handlePresetBack = useCallback(() => {
+    setPresetSelectionPath((prev) => prev.slice(0, -1))
+  }, [])
+
+  // 프리셋 답변을 채팅에 추가
+  const handlePresetAnswer = useCallback((answer: string) => {
+    const answerMessage: Message = {
       id: Date.now().toString(),
       role: 'assistant',
-      content: `${categoryInfo.label}에 대해 문의 주시면 안내해 드리겠습니다.`,
+      content: answer,
       timestamp: new Date(),
     }
-    setMessages((prev) => [...prev, welcomeMessage])
-  }
+    setMessages((prev) => [...prev, answerMessage])
+    
+    // 제목만 있는 옵션을 클릭한 경우: 선택 경로를 변경하지 않아서 옵션 목록이 계속 표시됨
+    // 답변이 있는 경우: 선택 경로를 유지하여 답변 창이 계속 표시됨
+    // 선택 경로는 변경하지 않으므로 현재 상태 유지
+  }, [])
 
   // 담당자 연락처 안내
   const handleShowContact = () => {
@@ -259,6 +278,10 @@ export function DocumentChatbot({ documentPaths }: DocumentChatbotProps) {
           selectedCategory={selectedCategory}
           onSelectCategory={handleCategorySelect}
           onButtonClick={handleButtonClick}
+          presetSelectionPath={presetSelectionPath}
+          onPresetOptionSelect={handlePresetOptionSelect}
+          onPresetBack={handlePresetBack}
+          onPresetAnswer={handlePresetAnswer}
         />
       )}
     </>
