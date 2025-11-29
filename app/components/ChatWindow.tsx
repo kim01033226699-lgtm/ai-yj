@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { Send, Loader2, ChevronRight, ChevronDown } from 'lucide-react'
+import { Send, Loader2, ChevronRight, ChevronDown, X } from 'lucide-react'
 import { CategorySelector } from './CategorySelector'
 import { PresetAnswerSelector } from './PresetAnswerSelector'
 import type { Message } from '../lib/types'
@@ -59,24 +59,21 @@ function ChatWindowComponent({
 
   return (
     <div
-      className={`fixed top-[10vh] left-1/2 md:top-auto md:left-auto md:right-6 md:bottom-24 z-40 w-[calc(100%-2rem)] max-w-sm md:w-96 h-[80vh] max-h-[80vh] md:h-[600px] md:max-h-[600px] bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-gray-200 transition-all duration-300 ease-in-out ${
+      className={`fixed top-0 left-0 md:top-auto md:left-auto md:right-6 md:bottom-24 z-40 w-full md:w-96 h-full md:h-[600px] md:max-h-[600px] md:rounded-2xl bg-white shadow-2xl flex flex-col overflow-hidden border-0 md:border md:border-gray-200 transition-all duration-300 ease-in-out ${
         isOpen
-          ? '-translate-x-1/2 md:translate-x-0 md:translate-y-0 opacity-100 pointer-events-auto'
-          : 'translate-x-[150%] md:translate-x-[calc(100%+1.5rem)] md:translate-y-0 opacity-0 pointer-events-none'
+          ? 'translate-x-0 md:translate-y-0 opacity-100 pointer-events-auto'
+          : 'translate-x-full md:translate-x-[calc(100%+1.5rem)] md:translate-y-0 opacity-0 pointer-events-none'
       }`}
     >
       {/* 헤더 */}
-      <div className="bg-blue-600 text-white p-4 flex items-center gap-3">
-        <div className="flex-1">
-          <h3 className="font-semibold">ai영업지원</h3>
-          <p className="text-xs text-blue-100">AI챗봇이 안내드립니다.</p>
-        </div>
+      <div className="bg-blue-600 text-white p-4 flex items-center justify-between">
+        <h3 className="font-semibold text-base">ai영업지원</h3>
         <button
           onClick={onClose}
           className="w-8 h-8 flex items-center justify-center hover:bg-white/20 rounded-full transition-colors"
           aria-label="채팅 닫기"
         >
-          <ChevronRight className="w-6 h-6" />
+          <X className="w-5 h-5" />
         </button>
       </div>
 

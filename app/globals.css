@@ -40,24 +40,6 @@ body {
   display: none;  /* Chrome, Safari and Opera */
 }
 
-/* 답변 확장 애니메이션 */
-@keyframes expand {
-  from {
-    opacity: 0;
-    max-height: 0;
-    padding-top: 0;
-    padding-bottom: 0;
-  }
-  to {
-    opacity: 1;
-    max-height: 1000px;
-    padding-top: 0.75rem;
-    padding-bottom: 0.75rem;
-  }
-}
-
-.animate-expand {
-  animation: expand 0.3s ease-in-out;
-}
+/* 답변 확장 애니메이션 - 제거 (CSS transition 사용) */
 
 

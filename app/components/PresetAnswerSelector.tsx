@@ -26,6 +26,8 @@ export function PresetAnswerSelector({
   const hasAutoAddedRef = useRef<string>('')
   const [refreshKey, setRefreshKey] = useState(0)
   const [expandedOptionId, setExpandedOptionId] = useState<string | null>(null)
+  const [expandedChildId, setExpandedChildId] = useState<string | null>(null)
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
 
   // 관리자 페이지에서 데이터가 업데이트되면 자동으로 새로고침
   useEffect(() => {
@@ -49,6 +51,15 @@ export function PresetAnswerSelector({
     console.error('[PresetAnswerSelector] 잘못된 category 값:', category)
     return null
   }
+
+  // 카테고리 변경 시 스크롤 위치 및 확장 상태 초기화
+  useEffect(() => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTop = 0
+    }
+    setExpandedOptionId(null)
+    setExpandedChildId(null)
+  }, [category, selectionPath])
 
   // 현재 단계의 옵션들 가져오기 (refreshKey가 변경되면 다시 로드)
   // refreshKey를 의존성으로 사용하여 관리자 페이지에서 데이터가 업데이트되면 자동으로 새로고침
@@ -219,53 +230,115 @@ export function PresetAnswerSelector({
             </div>
           </div>
         )}
-        <div className="flex flex-col gap-3 overflow-y-auto flex-1 scrollbar-hide">
-          {currentOptions.map((option) => {
-            const hasChildren = option.children && option.children.length > 0
-            const hasAnswer = !!option.answer
-            const isTitleOnly = !hasChildren && !hasAnswer
-            const isExpanded = expandedOptionId === option.id
+        <div ref={scrollContainerRef} className="overflow-y-auto flex-1 pb-80 scrollbar-hide">
+          <div className="flex flex-col gap-4 p-1">
+            {currentOptions.map((option) => {
+              const hasChildren = option.children && option.children.length > 0
+              const hasAnswer = !!option.answer
+              const isTitleOnly = !hasChildren && !hasAnswer
+              const isExpanded = expandedOptionId === option.id
 
-            return (
-              <div key={option.id} className="border rounded-lg overflow-hidden transition-all duration-300 ease-in-out">
-                <div
-                  className={`flex items-start gap-2 px-3 py-2 cursor-pointer transition-colors ${
-                    isTitleOnly
-                      ? 'bg-blue-50 hover:bg-blue-100 border-blue-300 text-blue-700'
-                      : 'bg-white hover:bg-blue-100 border-blue-200 text-gray-700'
-                  }`}
-                  onClick={() => {
-                    if (hasAnswer) {
-                      // 답변이 있으면 확장/축소 토글
-                      setExpandedOptionId(isExpanded ? null : option.id)
-                    } else {
-                      // 답변이 없으면 기존 동작
-                      handleOptionClick(option)
-                    }
-                  }}
-                >
-                  <span className="text-sm font-medium flex-1 break-words whitespace-pre-wrap">{option.label}</span>
-                  {hasAnswer && (
-                    <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <ChevronDown className={`w-4 h-4 text-gray-600 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
+              return (
+                <div key={option.id} className="border rounded-lg overflow-hidden transition-all duration-300 ease-in-out shadow-sm">
+                  <div
+                    className={`flex items-start gap-2 px-3 py-2.5 cursor-pointer transition-colors ${
+                      isTitleOnly
+                        ? 'bg-blue-50 hover:bg-blue-100 border-blue-300 text-blue-700'
+                        : 'bg-white hover:bg-blue-100 border-blue-200 text-gray-700'
+                    }`}
+                    onClick={() => {
+                      if (hasAnswer) {
+                        // 답변이 있으면 확장/축소 토글
+                        setExpandedOptionId(isExpanded ? null : option.id)
+                      } else if (hasChildren) {
+                        // 하위 옵션이 있으면 확장/축소 토글
+                        setExpandedOptionId(isExpanded ? null : option.id)
+                      } else {
+                        // 제목만 있으면 기존 동작
+                        handleOptionClick(option)
+                      }
+                    }}
+                  >
+                    <span className="text-sm font-medium flex-1 break-words whitespace-pre-wrap">{option.label}</span>
+                    {(hasAnswer || hasChildren) && (
+                      <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <ChevronDown className={`w-4 h-4 text-gray-600 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
+                      </div>
+                    )}
+                    {isTitleOnly && (
+                      <span className="ml-2 text-xs text-blue-500 flex-shrink-0">(답변)</span>
+                    )}
+                  </div>
+
+                  {/* 답변 확장 영역 */}
+                  {hasAnswer && isExpanded && (
+                    <div className="px-4 py-4 bg-blue-50 border-t border-blue-200">
+                      <p className="text-sm text-gray-800 whitespace-pre-wrap leading-relaxed break-words">
+                        {option.answer}
+                      </p>
                     </div>
                   )}
-                  {isTitleOnly && (
-                    <span className="ml-2 text-xs text-blue-500 flex-shrink-0">(답변)</span>
+
+                  {/* 하위 옵션 확장 영역 */}
+                  {hasChildren && isExpanded && option.children && (
+                    <div className="bg-gray-50 border-t border-gray-200">
+                      <div className="flex flex-col gap-2 p-3">
+                        {option.children.map((child) => {
+                          const childHasChildren = child.children && child.children.length > 0
+                          const childHasAnswer = !!child.answer
+                          const childIsTitleOnly = !childHasChildren && !childHasAnswer
+                          const isChildExpanded = expandedChildId === child.id
+
+                          return (
+                            <div key={child.id} className="border rounded-lg overflow-hidden transition-all duration-300 ease-in-out">
+                              <div
+                                className={`px-3 py-2 cursor-pointer transition-colors flex items-start gap-2 ${
+                                  childIsTitleOnly
+                                    ? 'bg-blue-50 hover:bg-blue-100 text-blue-700'
+                                    : 'bg-white hover:bg-blue-50 text-gray-700'
+                                }`}
+                                onClick={() => {
+                                  if (childIsTitleOnly) {
+                                    onAnswer(child.label)
+                                  } else if (childHasAnswer) {
+                                    // 답변이 있으면 확장/축소 토글
+                                    setExpandedChildId(isChildExpanded ? null : child.id)
+                                  } else {
+                                    // 더 깊은 하위 옵션이 있으면 페이지 이동
+                                    onSelect(option.id)
+                                    setTimeout(() => onSelect(child.id), 0)
+                                  }
+                                }}
+                              >
+                                <span className="text-sm break-words whitespace-pre-wrap flex-1">
+                                  {child.label}
+                                </span>
+                                {childHasAnswer && (
+                                  <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0 mt-0.5">
+                                    <ChevronDown className={`w-4 h-4 text-gray-600 transition-transform duration-200 ${isChildExpanded ? 'rotate-180' : ''}`} />
+                                  </div>
+                                )}
+                                {childIsTitleOnly && <span className="ml-2 text-xs text-blue-500 flex-shrink-0">(답변)</span>}
+                              </div>
+
+                              {/* 하위 옵션의 답변 확장 영역 */}
+                              {childHasAnswer && isChildExpanded && (
+                                <div className="px-4 py-4 bg-blue-50 border-t border-blue-200">
+                                  <p className="text-sm text-gray-800 whitespace-pre-wrap leading-relaxed break-words">
+                                    {child.answer}
+                                  </p>
+                                </div>
+                              )}
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
                   )}
                 </div>
-
-                {/* 답변 확장 영역 */}
-                {hasAnswer && isExpanded && (
-                  <div className="px-3 py-3 bg-blue-50 border-t border-blue-200 animate-expand">
-                    <p className="text-sm text-gray-800 whitespace-pre-wrap leading-relaxed break-words">
-                      {option.answer}
-                    </p>
-                  </div>
-                )}
-              </div>
-            )
-          })}
+              )
+            })}
+          </div>
         </div>
       </div>
     )
