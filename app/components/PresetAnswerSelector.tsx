@@ -219,7 +219,7 @@ export function PresetAnswerSelector({
             </div>
           </div>
         )}
-        <div className="flex flex-col gap-2 overflow-y-auto flex-1 scrollbar-hide">
+        <div className="flex flex-col gap-3 overflow-y-auto flex-1 scrollbar-hide">
           {currentOptions.map((option) => {
             const hasChildren = option.children && option.children.length > 0
             const hasAnswer = !!option.answer
@@ -227,7 +227,7 @@ export function PresetAnswerSelector({
             const isExpanded = expandedOptionId === option.id
 
             return (
-              <div key={option.id} className="border rounded-lg overflow-hidden transition-all duration-200">
+              <div key={option.id} className="border rounded-lg overflow-hidden transition-all duration-300 ease-in-out">
                 <div
                   className={`flex items-start gap-2 px-3 py-2 cursor-pointer transition-colors ${
                     isTitleOnly
