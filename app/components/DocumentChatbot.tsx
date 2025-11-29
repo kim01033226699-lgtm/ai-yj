@@ -26,6 +26,7 @@ export function DocumentChatbot({ documentPaths }: DocumentChatbotProps) {
   const [selectedCategory, setSelectedCategory] = useState<Category>(null)
   const [waitingForContactConfirmation, setWaitingForContactConfirmation] = useState(false)
   const [presetSelectionPath, setPresetSelectionPath] = useState<SelectionPath>([])
+  const [isPresetListOpen, setIsPresetListOpen] = useState(false)
 
   // 카테고리 변경 시 문서 컨텍스트 업데이트 (useCallback으로 메모이제이션)
   const updateDocumentContext = useCallback((docs: Document[], category: Category) => {
@@ -89,6 +90,7 @@ export function DocumentChatbot({ documentPaths }: DocumentChatbotProps) {
           const firstCategory = categories[0].id as Category
           setSelectedCategory(firstCategory)
           updateDocumentContext(allDocuments, firstCategory)
+          setIsPresetListOpen(true)
         }
       })
     }
@@ -100,6 +102,7 @@ export function DocumentChatbot({ documentPaths }: DocumentChatbotProps) {
     updateDocumentContext(allDocuments, category)
     setWaitingForContactConfirmation(false)
     setPresetSelectionPath([]) // 카테고리 변경 시 선택 경로 초기화
+    setIsPresetListOpen(true) // 카테고리 선택 시 목록 열기
   }, [allDocuments, updateDocumentContext])
 
   // 프리셋 답변 옵션 선택 핸들러
@@ -158,6 +161,10 @@ export function DocumentChatbot({ documentPaths }: DocumentChatbotProps) {
   // 메시지 전송
   const handleSendMessage = async (content: string) => {
     if (!content.trim() || isLoading) return
+
+    // 옵션 목록 닫기
+    setPresetSelectionPath([])
+    setIsPresetListOpen(false)
 
     // 카테고리 미선택 시 안내
     if (!selectedCategory) {
@@ -225,7 +232,8 @@ export function DocumentChatbot({ documentPaths }: DocumentChatbotProps) {
 
     try {
       // AI 답변 생성
-      const categoryLabel = CATEGORIES[selectedCategory].label
+      const categoryInfo = selectedCategory ? CATEGORIES[selectedCategory] : null
+      const categoryLabel = categoryInfo?.label || '일반'
       const result = await askQuestion(content, documentContext, categoryLabel)
 
       // 답변이 없는 경우 담당자 연락처 안내
@@ -301,6 +309,8 @@ export function DocumentChatbot({ documentPaths }: DocumentChatbotProps) {
         onPresetAnswer={handlePresetAnswer}
         isOpen={isOpen}
         onClose={() => setIsOpen(false)}
+        isPresetListOpen={isPresetListOpen}
+        onTogglePresetList={() => setIsPresetListOpen(!isPresetListOpen)}
       />
     </>
   )

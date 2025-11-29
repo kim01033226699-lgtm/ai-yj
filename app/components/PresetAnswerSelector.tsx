@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, ChevronDown } from 'lucide-react'
 import type { Category } from '../lib/types'
 import { getFirstLevelOptions, getNextOptions, findAnswerByPath, type SelectionPath } from '../lib/presetAnswers'
 import type { PresetOption } from '../lib/presetAnswers'
@@ -12,6 +12,7 @@ interface PresetAnswerSelectorProps {
   onSelect: (optionId: string) => void
   onBack: () => void
   onAnswer: (answer: string) => void
+  onClose: () => void
 }
 
 export function PresetAnswerSelector({
@@ -20,9 +21,11 @@ export function PresetAnswerSelector({
   onSelect,
   onBack,
   onAnswer,
+  onClose,
 }: PresetAnswerSelectorProps) {
   const hasAutoAddedRef = useRef<string>('')
   const [refreshKey, setRefreshKey] = useState(0)
+  const [expandedOptionId, setExpandedOptionId] = useState<string | null>(null)
 
   // 관리자 페이지에서 데이터가 업데이트되면 자동으로 새로고침
   useEffect(() => {
@@ -114,19 +117,17 @@ export function PresetAnswerSelector({
   // 1. 답변이 있으면 답변 표시
   if (answer) {
     return (
-      <div className="p-4 border-b border-gray-200 max-h-[300px] overflow-y-auto">
+      <div className="h-full flex flex-col p-4 bg-gray-50">
         {/* 뒤로가기 화살표와 선택한 항목 제목 */}
-        {pathLabels.length > 0 && (
-          <div className="mb-3 flex items-center gap-2">
-            {selectionPath.length > 0 && (
-              <button
-                onClick={onBack}
-                className="p-1 hover:bg-blue-100 rounded transition-colors flex-shrink-0"
-                aria-label="뒤로가기"
-              >
-                <ArrowLeft className="w-4 h-4 text-blue-600" />
-              </button>
-            )}
+        {pathLabels.length > 0 && selectionPath.length > 0 && (
+          <div className="mb-3 flex items-center gap-2 flex-shrink-0">
+            <button
+              onClick={onBack}
+              className="p-1 hover:bg-blue-100 rounded transition-colors flex-shrink-0"
+              aria-label="뒤로가기"
+            >
+              <ArrowLeft className="w-4 h-4 text-blue-600" />
+            </button>
             <div className="bg-white/50 rounded-lg px-3 py-2 border border-blue-100/50 flex-1">
               <p className="text-sm font-medium text-gray-700">
                 {pathLabels.join(' > ')}
@@ -135,7 +136,7 @@ export function PresetAnswerSelector({
           </div>
         )}
         {/* 말풍선 스타일 답변 박스 */}
-        <div className="flex justify-start">
+        <div className="flex justify-start overflow-y-auto flex-1">
           <div className="relative max-w-[95%]">
             {/* 말풍선 꼬리 */}
             <div className="absolute -left-2 top-4 w-0 h-0 border-t-[8px] border-t-transparent border-r-[8px] border-r-blue-100 border-b-[8px] border-b-transparent"></div>
@@ -200,19 +201,17 @@ export function PresetAnswerSelector({
     }
 
     return (
-      <div className="p-4 border-b border-gray-200">
-        {/* 뒤로가기 화살표와 선택한 항목 제목 */}
+      <div className="h-full flex flex-col p-4 bg-gray-50">
+        {/* 헤더: 뒤로가기 버튼 (선택 경로가 있을 때만) */}
         {pathLabels.length > 0 && (
-          <div className="mb-3 flex items-center gap-2">
-            {selectionPath.length > 0 && (
-              <button
-                onClick={onBack}
-                className="p-1 hover:bg-blue-100 rounded transition-colors flex-shrink-0"
-                aria-label="뒤로가기"
-              >
-                <ArrowLeft className="w-4 h-4 text-blue-600" />
-              </button>
-            )}
+          <div className="mb-3 flex items-center gap-2 flex-shrink-0">
+            <button
+              onClick={onBack}
+              className="p-1 hover:bg-blue-100 rounded transition-colors flex-shrink-0"
+              aria-label="뒤로가기"
+            >
+              <ArrowLeft className="w-4 h-4 text-blue-600" />
+            </button>
             <div className="bg-white rounded-lg px-3 py-2 border border-blue-200 flex-1">
               <p className="text-sm font-medium text-gray-700">
                 {pathLabels.join(' > ')}
@@ -220,27 +219,51 @@ export function PresetAnswerSelector({
             </div>
           </div>
         )}
-        <div className="flex flex-col gap-2 max-h-[200px] overflow-y-auto pr-2">
+        <div className="flex flex-col gap-2 overflow-y-auto flex-1 scrollbar-hide">
           {currentOptions.map((option) => {
             const hasChildren = option.children && option.children.length > 0
             const hasAnswer = !!option.answer
             const isTitleOnly = !hasChildren && !hasAnswer
-            
+            const isExpanded = expandedOptionId === option.id
+
             return (
-              <button
-                key={option.id}
-                onClick={() => handleOptionClick(option)}
-                className={`px-3 py-2 border rounded-lg text-sm font-medium text-left transition-colors ${
-                  isTitleOnly
-                    ? 'bg-blue-50 hover:bg-blue-100 border-blue-300 text-blue-700'
-                    : 'bg-white hover:bg-blue-100 border-blue-200 text-gray-700'
-                }`}
-              >
-                {option.label}
-                {isTitleOnly && (
-                  <span className="ml-2 text-xs text-blue-500">(답변)</span>
+              <div key={option.id} className="border rounded-lg overflow-hidden transition-all">
+                <div
+                  className={`flex items-center justify-between px-3 py-2 cursor-pointer transition-colors ${
+                    isTitleOnly
+                      ? 'bg-blue-50 hover:bg-blue-100 border-blue-300 text-blue-700'
+                      : 'bg-white hover:bg-blue-100 border-blue-200 text-gray-700'
+                  }`}
+                  onClick={() => {
+                    if (hasAnswer) {
+                      // 답변이 있으면 확장/축소 토글
+                      setExpandedOptionId(isExpanded ? null : option.id)
+                    } else {
+                      // 답변이 없으면 기존 동작
+                      handleOptionClick(option)
+                    }
+                  }}
+                >
+                  <span className="text-sm font-medium flex-1">{option.label}</span>
+                  {hasAnswer && (
+                    <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
+                      <ChevronDown className={`w-4 h-4 text-gray-600 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
+                    </div>
+                  )}
+                  {isTitleOnly && (
+                    <span className="ml-2 text-xs text-blue-500">(답변)</span>
+                  )}
+                </div>
+
+                {/* 답변 확장 영역 */}
+                {hasAnswer && isExpanded && (
+                  <div className="px-3 py-3 bg-blue-50 border-t border-blue-200">
+                    <p className="text-sm text-gray-800 whitespace-pre-wrap leading-relaxed">
+                      {option.answer}
+                    </p>
+                  </div>
                 )}
-              </button>
+              </div>
             )
           })}
         </div>
