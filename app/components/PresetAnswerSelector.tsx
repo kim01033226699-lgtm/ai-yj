@@ -227,9 +227,9 @@ export function PresetAnswerSelector({
             const isExpanded = expandedOptionId === option.id
 
             return (
-              <div key={option.id} className="border rounded-lg overflow-hidden transition-all">
+              <div key={option.id} className="border rounded-lg overflow-hidden transition-all duration-200">
                 <div
-                  className={`flex items-center justify-between px-3 py-2 cursor-pointer transition-colors ${
+                  className={`flex items-start gap-2 px-3 py-2 cursor-pointer transition-colors ${
                     isTitleOnly
                       ? 'bg-blue-50 hover:bg-blue-100 border-blue-300 text-blue-700'
                       : 'bg-white hover:bg-blue-100 border-blue-200 text-gray-700'
@@ -244,21 +244,21 @@ export function PresetAnswerSelector({
                     }
                   }}
                 >
-                  <span className="text-sm font-medium flex-1">{option.label}</span>
+                  <span className="text-sm font-medium flex-1 break-words whitespace-pre-wrap">{option.label}</span>
                   {hasAnswer && (
-                    <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
+                    <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0 mt-0.5">
                       <ChevronDown className={`w-4 h-4 text-gray-600 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
                     </div>
                   )}
                   {isTitleOnly && (
-                    <span className="ml-2 text-xs text-blue-500">(답변)</span>
+                    <span className="ml-2 text-xs text-blue-500 flex-shrink-0">(답변)</span>
                   )}
                 </div>
 
                 {/* 답변 확장 영역 */}
                 {hasAnswer && isExpanded && (
-                  <div className="px-3 py-3 bg-blue-50 border-t border-blue-200">
-                    <p className="text-sm text-gray-800 whitespace-pre-wrap leading-relaxed">
+                  <div className="px-3 py-3 bg-blue-50 border-t border-blue-200 animate-expand">
+                    <p className="text-sm text-gray-800 whitespace-pre-wrap leading-relaxed break-words">
                       {option.answer}
                     </p>
                   </div>

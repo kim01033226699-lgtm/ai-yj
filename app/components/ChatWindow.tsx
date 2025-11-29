@@ -59,7 +59,7 @@ function ChatWindowComponent({
 
   return (
     <div
-      className={`fixed top-[5vh] left-1/2 md:top-auto md:left-auto md:right-6 md:bottom-24 z-40 w-[calc(100%-2rem)] max-w-sm md:w-96 h-[90vh] max-h-[600px] md:h-[600px] bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-gray-200 transition-all duration-300 ease-in-out ${
+      className={`fixed top-[10vh] left-1/2 md:top-auto md:left-auto md:right-6 md:bottom-24 z-40 w-[calc(100%-2rem)] max-w-sm md:w-96 h-[80vh] max-h-[80vh] md:h-[600px] md:max-h-[600px] bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-gray-200 transition-all duration-300 ease-in-out ${
         isOpen
           ? '-translate-x-1/2 md:translate-x-0 md:translate-y-0 opacity-100 pointer-events-auto'
           : 'translate-x-[150%] md:translate-x-[calc(100%+1.5rem)] md:translate-y-0 opacity-0 pointer-events-none'
