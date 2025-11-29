@@ -178,26 +178,6 @@ export function DocumentChatbot({ documentPaths }: DocumentChatbotProps) {
       return
     }
 
-    // API 키 확인
-    if (!process.env.NEXT_PUBLIC_GEMINI_API_KEY) {
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: Date.now().toString(),
-          role: 'user',
-          content,
-          timestamp: new Date(),
-        },
-        {
-          id: (Date.now() + 1).toString(),
-          role: 'assistant',
-          content: '⚠️ Gemini API 키가 설정되지 않았습니다. .env.local 파일을 확인해주세요.',
-          timestamp: new Date(),
-        },
-      ])
-      return
-    }
-
     // 문서 로드 확인
     if (!documentContext) {
       setMessages((prev) => [
