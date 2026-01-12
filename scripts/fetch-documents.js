@@ -93,41 +93,52 @@ function parseCSVLine(line) {
 }
 
 // CSV를 문서 형식으로 파싱
-// 구글 시트 구조 (프리셋 탭과 같은 탭 사용):
-// O열(인덱스 14): 문서명
-// P열(인덱스 15): 문서내용
-// Q열(인덱스 16): 타입 (md, pdf, txt)
+// 구글 시트 구조 (질문답변 탭):
+// A열(인덱스 0): 카테고리
+// B열(인덱스 1): Q:질문?A:답변 형식
 function parseCSVToDocuments(csvText) {
   const lines = splitCSVLines(csvText).filter(line => line.trim())
-  if (lines.length < 3) return [] // 헤더 2줄 + 데이터 최소 1줄
+  if (lines.length < 2) return [] // 헤더 1줄 + 데이터 최소 1줄
 
   const result = []
 
-  // 헤더는 2줄
-  // 데이터는 3행부터 시작
-  for (let i = 2; i < lines.length; i++) {
+  // 헤더는 1줄
+  // 데이터는 2행부터 시작
+  for (let i = 1; i < lines.length; i++) {
     const values = parseCSVLine(lines[i])
-    if (values.length < 17) continue // 최소 O, P, Q열 필요 (인덱스 14, 15, 16)
+    if (values.length < 2) continue // 최소 A, B열 필요
 
-    // O열: 문서명 (인덱스 14)
-    const name = values[14]?.trim()
-    // P열: 문서내용 (인덱스 15)
-    const content = values[15]?.trim() || ''
-    // Q열: 타입 (인덱스 16)
-    const type = values[16]?.trim()?.toLowerCase() || 'md'
+    // A열: 카테고리 (인덱스 0)
+    const category = values[0]?.trim()
+    // B열: Q:질문?A:답변 (인덱스 1)
+    const qaText = values[1]?.trim() || ''
 
-    if (!name || !content) continue
+    if (!category || !qaText) continue
 
-    // 타입 검증
-    if (!['md', 'pdf', 'txt'].includes(type)) {
-      console.warn(`⚠️  "${name}" 문서의 타입이 유효하지 않습니다: ${type}. 기본값 'md' 사용`)
+    // Q:와 A: 분리
+    const qMatch = qaText.match(/Q:\s*(.+?)\s*A:/i)
+    const aMatch = qaText.match(/A:\s*(.+)/i)
+
+    if (!qMatch || !aMatch) {
+      console.warn(`⚠️  "${category}" 카테고리의 Q&A 형식이 올바르지 않습니다: ${qaText.substring(0, 50)}...`)
+      continue
     }
+
+    const question = qMatch[1].trim()
+    const answer = aMatch[1].trim()
+
+    if (!question || !answer) continue
+
+    // 문서명: 카테고리 - 질문
+    const name = `[${category}] ${question}`
+    // 문서내용: 질문과 답변을 명확하게 구분
+    const content = `질문: ${question}\n\n답변: ${answer}`
 
     result.push({
       name: name,
       content: content,
-      type: ['md', 'pdf', 'txt'].includes(type) ? type : 'md',
-      path: `sheet:${name}:${Date.now()}`,
+      type: 'md',
+      path: `sheet:${category}:${Date.now() + i}`,
     })
   }
 
