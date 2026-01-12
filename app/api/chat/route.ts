@@ -22,7 +22,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' })
+    // gemini-2.5-flash는 최신 모델로 향상된 성능 제공
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' })
 
     // 카테고리 정보 추가
     const categoryContext = categoryLabel
@@ -47,7 +48,43 @@ ${categoryContext}
 
 답변:`
 
-    const result = await model.generateContent(prompt)
+    // API 호출 (재시도 로직 포함)
+    let result
+    let retryCount = 0
+    const maxRetries = 2
+
+    while (retryCount <= maxRetries) {
+      try {
+        result = await model.generateContent(prompt)
+        break // 성공하면 루프 탈출
+      } catch (apiError: any) {
+        // 할당량 초과 에러 체크
+        if (apiError?.message?.includes('quota') || apiError?.message?.includes('RESOURCE_EXHAUSTED')) {
+          if (retryCount < maxRetries) {
+            retryCount++
+            console.log(`할당량 초과, ${retryCount}번째 재시도 중... (3초 후)`)
+            await new Promise(resolve => setTimeout(resolve, 3000)) // 3초 대기
+            continue
+          } else {
+            // 최대 재시도 초과
+            return NextResponse.json(
+              {
+                error: 'API 할당량이 초과되었습니다. 잠시 후 다시 시도해주세요.',
+                details: '무료 티어 한도 초과 (분당/일일 요청 제한)'
+              },
+              { status: 429 }
+            )
+          }
+        }
+        // 다른 에러는 바로 throw
+        throw apiError
+      }
+    }
+
+    if (!result) {
+      throw new Error('API 호출 실패')
+    }
+
     const response = result.response
     const text = response.text()
 
@@ -64,8 +101,23 @@ ${categoryContext}
     })
   } catch (error) {
     console.error('AI 답변 생성 오류:', error)
+
+    // 에러 상세 정보 추출
+    const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류'
+    const errorDetails = error instanceof Error && 'stack' in error ? error.stack : ''
+
+    console.error('에러 상세:', {
+      message: errorMessage,
+      details: errorDetails,
+      apiKeyExists: !!process.env.GEMINI_API_KEY,
+      apiKeyPrefix: process.env.GEMINI_API_KEY?.substring(0, 10) + '...'
+    })
+
     return NextResponse.json(
-      { error: 'AI 답변 생성 중 오류가 발생했습니다.' },
+      {
+        error: 'AI 답변 생성 중 오류가 발생했습니다.',
+        details: errorMessage
+      },
       { status: 500 }
     )
   }

@@ -167,39 +167,55 @@ function ChatWindowComponent({
         <div ref={messagesEndRef} />
       </div>
 
-      {/* 입력창 - 목록이 열려있을 때는 숨김 */}
-      {!isPresetListOpen && (
-        <form onSubmit={handleSubmit} className="p-4 bg-white border-t">
-          <div className="flex gap-2 items-center">
-            {/* 목록 토글 버튼 */}
-            {selectedCategory && (
-              <button
-                type="button"
-                onClick={onTogglePresetList}
-                className="w-10 h-10 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-full flex items-center justify-center transition-colors flex-shrink-0"
-                aria-label={isPresetListOpen ? "목록 닫기" : "목록 열기"}
-              >
-                <ChevronDown className={`w-5 h-5 transition-transform duration-300 ${isPresetListOpen ? 'rotate-180' : ''}`} />
-              </button>
-            )}
-            <input
-              type="text"
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              placeholder={selectedCategory ? "질문을 입력하세요..." : "카테고리를 먼저 선택해주세요"}
-              className="flex-1 px-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm disabled:bg-gray-100"
-              disabled={isLoading || !selectedCategory}
-            />
+      {/* 입력창 - 목록이 열려있을 때는 입력창 숨기고 토글 버튼만 표시 */}
+      <div className="p-4 bg-white border-t">
+        {isPresetListOpen ? (
+          // 목록이 열려있을 때: 토글 버튼만 표시
+          <div className="flex justify-center">
             <button
-              type="submit"
-              disabled={isLoading || !selectedCategory || !inputValue.trim()}
-              className="w-10 h-10 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white rounded-full flex items-center justify-center transition-colors flex-shrink-0"
+              type="button"
+              onClick={onTogglePresetList}
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-full flex items-center gap-2 transition-colors"
+              aria-label="입력창 열기"
             >
-              <Send className="w-5 h-5" />
+              <span className="text-sm font-medium">직접 질문하기</span>
+              <ChevronDown className="w-4 h-4 rotate-180" />
             </button>
           </div>
-        </form>
-      )}
+        ) : (
+          // 목록이 닫혀있을 때: 입력 폼 표시
+          <form onSubmit={handleSubmit}>
+            <div className="flex gap-2 items-center">
+              {/* 목록 토글 버튼 */}
+              {selectedCategory && (
+                <button
+                  type="button"
+                  onClick={onTogglePresetList}
+                  className="w-10 h-10 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-full flex items-center justify-center transition-colors flex-shrink-0"
+                  aria-label="목록 열기"
+                >
+                  <ChevronDown className="w-5 h-5" />
+                </button>
+              )}
+              <input
+                type="text"
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                placeholder={selectedCategory ? "질문을 입력하세요..." : "카테고리를 먼저 선택해주세요"}
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm disabled:bg-gray-100"
+                disabled={isLoading || !selectedCategory}
+              />
+              <button
+                type="submit"
+                disabled={isLoading || !selectedCategory || !inputValue.trim()}
+                className="w-10 h-10 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white rounded-full flex items-center justify-center transition-colors flex-shrink-0"
+              >
+                <Send className="w-5 h-5" />
+              </button>
+            </div>
+          </form>
+        )}
+      </div>
     </div>
   )
 }

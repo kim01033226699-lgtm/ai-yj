@@ -11,7 +11,8 @@ export default function AIYJPage() {
   const documents = [
     { path: '/documents/goodrich-rp-qa.md', name: 'GoodRich RP채널 Q&A' },
     { path: '/documents/ga-domain-terms.md', name: 'GA 도메인 용어집' },
-    { path: '/documents/gr-appoint.md', name: 'GR Appoint' },
+    { path: '/documents/gr-appoint.md', name: '금융캠퍼스 지원 안내' },
+    { path: '/documents/위촉업무가이드.md', name: '위촉업무 가이드' },
     { path: '/documents/contact-info.md', name: '영업지원 연락처' },
   ]
 

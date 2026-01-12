@@ -5,11 +5,12 @@
   "main": "index.js",
   "scripts": {
     "dev": "next dev",
-    "prebuild": "node scripts/fetch-preset-answers.js",
+    "prebuild": "node scripts/fetch-preset-answers.js && node scripts/fetch-documents.js",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "fetch-data": "node scripts/fetch-preset-answers.js"
+    "fetch-data": "node scripts/fetch-preset-answers.js",
+    "fetch-documents": "node scripts/fetch-documents.js"
   },
   "private": true,
   "keywords": [],
@@ -34,3 +35,6 @@
     "typescript": "^5.9.3"
   }
 }
+
+
+
