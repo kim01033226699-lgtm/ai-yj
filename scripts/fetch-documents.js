@@ -7,11 +7,14 @@ const https = require('https')
 require('dotenv').config({ path: path.resolve(__dirname, '../.env.local') })
 
 const GOOGLE_SHEET_ID = process.env.NEXT_PUBLIC_GOOGLE_SHEET_ID
-const DOCUMENTS_SHEET_GID = process.env.NEXT_PUBLIC_DOCUMENTS_SHEET_GID || '0'
+const DOCUMENTS_SHEET_GID = process.env.NEXT_PUBLIC_DOCUMENTS_SHEET_GID
 
-if (!GOOGLE_SHEET_ID) {
-  console.error('❌ NEXT_PUBLIC_GOOGLE_SHEET_ID가 .env.local에 설정되지 않았습니다.')
-  process.exit(1)
+if (!GOOGLE_SHEET_ID || !DOCUMENTS_SHEET_GID) {
+  console.warn('⚠️  환경 변수가 설정되지 않았습니다. 빈 문서 목록으로 저장합니다.')
+  const outputPath = path.resolve(__dirname, '../public/documents.json')
+  fs.writeFileSync(outputPath, JSON.stringify([], null, 2), 'utf-8')
+  console.log('💾 빈 파일 저장 완료:', outputPath)
+  process.exit(0)
 }
 
 // CSV 텍스트를 라인별로 분리 (따옴표 안의 줄바꿈은 무시)

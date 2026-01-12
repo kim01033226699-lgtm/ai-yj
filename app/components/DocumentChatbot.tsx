@@ -27,7 +27,6 @@ export function DocumentChatbot({ documentPaths }: DocumentChatbotProps) {
   const [selectedCategory, setSelectedCategory] = useState<Category>(null)
   const [waitingForContactConfirmation, setWaitingForContactConfirmation] = useState(false)
   const [presetSelectionPath, setPresetSelectionPath] = useState<SelectionPath>([])
-  const [isPresetListOpen, setIsPresetListOpen] = useState(false)
 
   // 카테고리 변경 시 문서 컨텍스트 업데이트 (useCallback으로 메모이제이션)
   const updateDocumentContext = useCallback((docs: Document[], category: Category, adminDocs: Document[] = []) => {
@@ -327,8 +326,6 @@ export function DocumentChatbot({ documentPaths }: DocumentChatbotProps) {
         onPresetAnswer={handlePresetAnswer}
         isOpen={isOpen}
         onClose={() => setIsOpen(false)}
-        isPresetListOpen={isPresetListOpen}
-        onTogglePresetList={() => setIsPresetListOpen(!isPresetListOpen)}
       />
     </>
   )

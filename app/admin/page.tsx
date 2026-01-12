@@ -1,8 +1,14 @@
 'use client'
 
-import { AdminDocumentManager } from '../components/AdminDocumentManager'
+import dynamic from 'next/dynamic'
 import Link from 'next/link'
 import { Home } from 'lucide-react'
+
+// AdminDocumentManager를 클라이언트에서만 로드 (SSR 비활성화)
+const AdminDocumentManager = dynamic(
+  () => import('../components/AdminDocumentManager').then(mod => ({ default: mod.AdminDocumentManager })),
+  { ssr: false, loading: () => <div className="text-center py-8">로딩 중...</div> }
+)
 
 export default function AdminPage() {
   return (
